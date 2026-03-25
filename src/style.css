@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter/wght.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
+
+@layer base {
+    :root {
+        --font-sans: "Inter Variable", sans-serif;
+        --font-mono: "JetBrains Mono Variable", monospace;
+        font-variant-ligatures: none;
+    }
+}
+
+html,
+body {
+    @apply bg-white;
+}
+
+@import "@fontsource-variable/material-symbols-rounded/fill.css";
+
+.material-symbol {
+    font-size: 1.25em;
+    font-family: "Material Symbols Rounded Variable";
+    font-weight: normal;
+    font-style: normal;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+
+    &[data-fill] {
+        font-variation-settings: "FILL" 1;
+    }
+}
+
+[data-presentation-mode] .hide-in-presentation-mode {
+    display: none;
+}
+
+@utility bg-lines {
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent var(--bg-lines-size, 10px),
+        var(--bg-lines-color) var(--bg-lines-size, 10px),
+        var(--bg-lines-color) calc(var(--bg-lines-size, 10px) * 2)
+    );
+}

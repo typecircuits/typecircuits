@@ -1,0 +1,145 @@
+Research Activities:
+  Python:
+    - title: Arrays
+      code: |-
+        letters = ["a", "b", "c"]
+        first_letter = letters[0]
+    - title: Long word
+      code: |-
+        def is_long_word(word):
+            return word > 5
+
+        is_long_word("Python")
+      selections:
+        - [17, 21]
+        - [35, 43]
+        - [45, 67]
+      errorMessage: "'>' not supported between instances of 'str' and 'int'"
+    - title: Square
+      code: |-
+        def input() -> str: ...
+
+        n = input()
+        print(n * n)
+      selections:
+        - [0, 23]
+        - [25, 36]
+        - [43, 48]
+      errorMessage: "can't multiply sequence by non-int of type 'str'"
+    - title: Letters
+      code: |-
+        letters = ["a", "b", "c"]
+        for i in range(3):
+            print(i)
+      selections:
+        - [0, 25]
+        - [30, 31]
+        - [49, 57]
+      errorMessage: "unused variable 'letters'"
+  Java:
+    - title: Arrays
+      code: |-
+        String[] letters = { "a", "b", "c" };
+        String firstLetter = letters[0];
+      options:
+        showTypes: false
+    - title: Long word
+      code: |-
+        boolean isLongWord(String word) {
+            return word > 5;
+        }
+
+        isLongWord("Java");
+      selections:
+        - [26, 30]
+        - [45, 53]
+        - [58, 77]
+      errorMessage: "bad operand types for binary operator '>'"
+    - title: Square
+      code: |-
+        class Scanner {
+            String next();
+        }
+
+        Scanner scanner = new Scanner(System.in);
+        int n = scanner.next();
+        System.out.println(n * n);
+      selections:
+        - [20, 34]
+        - [80, 103]
+        - [123, 128]
+      errorMessage: "incompatible types: java.lang.String cannot be converted to int"
+    - title: Letters
+      code: |-
+        String[] letters = { "a", "b", "c" };
+        for (int i = 0; i < letters.length; i++) {
+            System.out.println(i);
+        }
+      selections:
+        - [9, 37]
+        - [47, 48]
+        - [85, 107]
+      errorMessage: "local variable 'letters' is not used"
+  C#:
+    - title: Arrays
+      code: |-
+        string[] letters = { "a", "b", "c" };
+        string firstLetter = letters[0];
+      options:
+        showTypes: false
+    - title: Long word
+      code: |-
+        bool isLongWord(string word)
+        {
+            return word > 5;
+        }
+
+        isLongWord("C#");
+      selections:
+        - [23, 27]
+        - [42, 50]
+        - [55, 72]
+      errorMessage: "Operator '>' cannot be applied to operands of type 'string' and 'int'"
+    - title: Square
+      code: |-
+        class Console
+        {
+            string ReadLine();
+        }
+
+        int n = Console.ReadLine();
+        Console.WriteLine(n * n);
+      selections:
+        - [20, 38]
+        - [42, 69]
+        - [88, 93]
+      errorMessage: "Cannot implicitly convert type 'string' to 'int'"
+    - title: Letters
+      code: |-
+        string[] letters = { "a", "b", "c" };
+        for (int i = 0; i < letters.Length; i++)
+        {
+            Console.WriteLine(i);
+        }
+      selections:
+        - [9, 36]
+        - [47, 48]
+        - [85, 106]
+      errorMessage: "The variable 'letters' is declared but never used"
+Starter Activities:
+  JavaScript:
+    - title: Addition
+      code: |-
+        let sum = 1 + 2;
+    - title: Arrays
+      code: |-
+        let letters = ["a", "b", "c"];
+        let firstLetter = letters[0];
+    - title: "'while' and 'for' loops"
+      code: |-
+        for (let i = 0; i < 10; i++) {}
+
+        let j = 0;
+        while (j < 10) {
+            j++;
+        }
