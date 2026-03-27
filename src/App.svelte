@@ -268,9 +268,13 @@
     <div class="flex flex-row items-center justify-between gap-[10px]">
         {#if !fullscreen}
             <div class="flex flex-row items-center gap-[10px] font-semibold">
-                <Button onclick={onclear}>
-                    <Icon>add</Icon>
-                </Button>
+                <a href="https://typecircuits.org" target="_blank">
+                    <img
+                        src="https://typecircuits.org/logo.png"
+                        alt="Type Circuits"
+                        class="size-[32px]"
+                    />
+                </a>
 
                 <LanguageDropdown bind:selection={language} />
 
@@ -368,23 +372,6 @@
             />
         </div>
     </div>
-
-    {#if !fullscreen}
-        <div
-            class="flex items-center justify-center gap-[0.5em] text-[10pt] font-medium text-current"
-        >
-            <a href="https://typecircuits.org" class="opacity-70 hover:opacity-100">
-                Type Circuits
-            </a>
-
-            <span class="opacity-25">•</span>
-
-            <p>
-                <span class="opacity-70">Made by</span>
-                <a href="https://gramer.dev" class="opacity-70 hover:opacity-100">Wilson Gramer</a>
-            </p>
-        </div>
-    {/if}
 </div>
 
 {#if graphData != null && printing}
