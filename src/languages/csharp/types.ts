@@ -9,6 +9,7 @@ const functionType = (inputs: Type[], output: Type) =>
             const result = `(${inputs.join(", ")}) => ${output}`;
             return root ? result : `(${result})`;
         },
+        isFunction: true,
     });
 
 export { functionType as function };

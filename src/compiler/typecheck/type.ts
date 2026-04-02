@@ -4,6 +4,7 @@ export interface ConstructedType {
     tag: unknown;
     children: Type[];
     display: (children: string[], root: boolean) => string;
+    isFunction?: boolean;
 }
 
 export type Type = Node | ConstructedType | null;

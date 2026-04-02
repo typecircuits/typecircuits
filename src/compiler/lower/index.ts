@@ -1,5 +1,5 @@
 import { Solver, type TypeConstraint } from "../typecheck/solve";
-import type { Type } from "../typecheck/type";
+import { isConstructedType, type Type } from "../typecheck/type";
 import type { Node } from "./node";
 
 export interface Edge {
@@ -106,6 +106,18 @@ export class LowerContext {
         );
 
         const groups = this.solver.run(this.nodes);
+
+        // Hide functions if requested
+        if (!this.options.showFunctions) {
+            for (const [representative, group] of groups.groups) {
+                if (group.types.some((type) => isConstructedType(type) && type.isFunction)) {
+                    groups.groups.delete(representative);
+                    for (const node of group.nodes) {
+                        this.nodes.delete(node);
+                    }
+                }
+            }
+        }
 
         return {
             nodes: Array.from(this.nodes),
