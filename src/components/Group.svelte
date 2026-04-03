@@ -37,7 +37,7 @@
 
         <div
             class={[
-                "relative flex max-h-full max-w-full flex-col items-center overflow-clip rounded-lg border-[1.5px] text-center shadow-black/5 **:pointer-events-none",
+                "relative flex max-h-full max-w-full flex-col items-center overflow-clip rounded-lg border-[1.5px] text-center **:pointer-events-none",
                 kind === "conflict" ? "border-dashed bg-lines" : "",
             ]}
             style:width="{width}px"

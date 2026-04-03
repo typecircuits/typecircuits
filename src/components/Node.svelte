@@ -4,6 +4,7 @@
     import {
         nodeLabelFontFamily,
         nodeLabelFontSize,
+        nodeMargin,
         nodePaddingX,
         nodePaddingY,
     } from "@/util/layout";
@@ -38,22 +39,21 @@
 <div
     style:width={width && width + "px"}
     style:height={height && height + "px"}
+    style:margin-right={width == null ? nodeMargin + "px" : undefined}
+    style:margin-bottom={height == null ? nodeMargin + "px" : undefined}
     style:padding-inline="{nodePaddingX * scale}px"
     style:padding-block="{nodePaddingY * scale}px"
     style:opacity={isSelected ? 1 : 0.5}
     style:border-radius="{8 * scale}px"
-    class={[
-        "relative flex max-h-full max-w-full flex-col items-center justify-center gap-[2px] overflow-clip border-[1.5px] border-gray-400 bg-white text-center shadow-md shadow-black/5 transition-opacity duration-75",
-        width == null && "mr-[10px]",
-        height == null && "mb-[10px]",
-    ]}
+    class="relative max-h-full max-w-full gap-[2px] overflow-clip border-[1.5px] border-gray-400 bg-white text-center transition-opacity duration-75"
     {onpointerover}
     {onpointerout}
 >
     <code
-        class="w-full text-center whitespace-nowrap"
+        class="block w-full text-center whitespace-nowrap"
         style:font-size="{nodeLabelFontSize * scale}px"
         style:font-family={nodeLabelFontFamily}
+        style:margin-top={height == null ? `-${nodePaddingY}px` : "-0.25lh"}
     >
         {data.node.span.source}
     </code>

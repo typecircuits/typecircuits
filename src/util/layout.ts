@@ -6,6 +6,7 @@ export const nodeSeparation = 100;
 export const edgeSeparation = 20;
 export const nodeLabelFontSize = 14;
 export const nodeLabelFontFamily = "var(--font-mono)";
+export const nodeMargin = 10;
 export const nodePaddingX = 16;
 export const nodePaddingY = 20;
 export const groupLabelHeight = 24;

@@ -54,9 +54,7 @@
         role="tooltip"
         class={[
             "rounded-[12px] border-1 border-gray-200 bg-white transition-opacity duration-75",
-            expanded
-                ? "px-[8px] py-[4px] shadow-md shadow-black/2.5"
-                : "px-[4px] py-[1px] text-[smaller]",
+            expanded ? "px-[8px] py-[4px]" : "px-[4px] py-[1px] text-[smaller]",
             isActive ? "opacity-100" : "opacity-0",
         ]}
         {onmouseenter}
