@@ -26,6 +26,8 @@ Research Activities:
         - [25, 36]
         - [43, 48]
       errorMessage: "can't multiply sequence by non-int of type 'str'"
+      options:
+        showFunctionsAndStatements: true
     - title: Letters
       code: |-
         letters = ["a", "b", "c"]
@@ -64,6 +66,8 @@ Research Activities:
         Scanner scanner = new Scanner(System.in);
         int n = scanner.next();
         System.out.println(n * n);
+      options:
+        showFunctionsAndStatements: true
       selections:
         - [20, 34]
         - [80, 103]
@@ -109,6 +113,8 @@ Research Activities:
 
         int n = Console.ReadLine();
         Console.WriteLine(n * n);
+      options:
+        showFunctionsAndStatements: true
       selections:
         - [20, 38]
         - [42, 69]
