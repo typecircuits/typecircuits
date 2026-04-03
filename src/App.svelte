@@ -3,7 +3,7 @@
 
     export const sharedOptions = {
         showGroups: true,
-        showFunctions: true,
+        showFunctionsAndStatements: true,
     };
 </script>
 

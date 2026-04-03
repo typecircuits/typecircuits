@@ -96,7 +96,10 @@ export class LowerContext {
 
     finish() {
         for (const node of [...this.nodes]) {
-            if (node.display === "hidden") {
+            if (
+                node.display === "hidden" ||
+                (!this.options.showFunctionsAndStatements && node.display === "untyped")
+            ) {
                 this.nodes.delete(node);
             }
         }
@@ -108,7 +111,7 @@ export class LowerContext {
         const groups = this.solver.run(this.nodes);
 
         // Hide functions if requested
-        if (!this.options.showFunctions) {
+        if (!this.options.showFunctionsAndStatements) {
             for (const [representative, group] of groups.groups) {
                 if (group.types.some((type) => isConstructedType(type) && type.isFunction)) {
                     groups.groups.delete(representative);
