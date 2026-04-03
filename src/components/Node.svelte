@@ -16,10 +16,11 @@
         };
         width?: number;
         height?: number;
+        scale?: number;
         inGraph?: boolean;
     }
 
-    const { data, width, height, inGraph = true }: Props = $props();
+    const { data, width, height, scale = 1, inGraph = true }: Props = $props();
 
     const isSelected = $derived(
         activeNodes.current.length === 0 || activeNodes.current.includes(data.node),
@@ -37,11 +38,12 @@
 <div
     style:width={width && width + "px"}
     style:height={height && height + "px"}
-    style:padding-inline="{nodePaddingX}px"
-    style:padding-block="{nodePaddingY}px"
+    style:padding-inline="{nodePaddingX * scale}px"
+    style:padding-block="{nodePaddingY * scale}px"
     style:opacity={isSelected ? 1 : 0.5}
+    style:border-radius="{8 * scale}px"
     class={[
-        "relative flex max-h-full max-w-full flex-col items-center justify-center gap-[2px] overflow-clip rounded-lg border-[1.5px] border-gray-400 bg-white text-center shadow-md shadow-black/5 transition-opacity duration-75",
+        "relative flex max-h-full max-w-full flex-col items-center justify-center gap-[2px] overflow-clip border-[1.5px] border-gray-400 bg-white text-center shadow-md shadow-black/5 transition-opacity duration-75",
         width == null && "mr-[10px]",
         height == null && "mb-[10px]",
     ]}
@@ -50,7 +52,7 @@
 >
     <code
         class="w-full text-center whitespace-nowrap"
-        style:font-size="{nodeLabelFontSize}px"
+        style:font-size="{nodeLabelFontSize * scale}px"
         style:font-family={nodeLabelFontFamily}
     >
         {data.node.span.source}

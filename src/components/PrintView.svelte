@@ -49,7 +49,7 @@
             height,
         });
 
-        pdf.output("dataurlnewwindow", { filename });
+        pdf.save(filename);
 
         onfinish();
     };
@@ -63,7 +63,7 @@
 
 <div bind:this={container}>
     <div
-        class="mb-[20px] flex w-fit flex-col gap-[20px] font-mono text-[10px] leading-relaxed font-semibold whitespace-pre-wrap"
+        class="mb-[20px] flex w-fit flex-col gap-[20px] font-mono text-[18px] leading-relaxed whitespace-pre-wrap"
     >
         <p>{code}</p>
 
@@ -76,7 +76,7 @@
 
     {#each nodes as node}
         <div class="inline-block">
-            <Node data={{ node }} inGraph={false} />
+            <Node data={{ node }} scale={1.5} inGraph={false} />
         </div>
     {/each}
 </div>
