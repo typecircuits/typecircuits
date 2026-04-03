@@ -13,7 +13,7 @@
     import Button from "@/components/Button.svelte";
     import Icon from "./components/Icon.svelte";
     import { onMount } from "svelte";
-    import { toPng } from "html-to-image";
+    import { toCanvas } from "html-to-image";
     import * as compiler from "@/compiler";
     import PrintView from "./components/PrintView.svelte";
     import Visualizer from "./components/Visualizer.svelte";
@@ -161,7 +161,7 @@
 
         const viewportElement = document.querySelector<HTMLElement>(".svelte-flow__viewport")!;
 
-        const dataUrl = await toPng(viewportElement, {
+        const canvas = await toCanvas(viewportElement, {
             width: imageSize,
             height: imageSize * aspectRatio,
             style: {
@@ -171,8 +171,49 @@
             },
         });
 
+        // Crop canvas to content
+
+        let minX = imageSize;
+        let maxX = 0;
+        let minY = imageSize * aspectRatio;
+        let maxY = 0;
+        const imageData = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height);
+        for (let y = 0; y < imageData.height; y++) {
+            for (let x = 0; x < imageData.width; x++) {
+                const index = (y * imageData.width + x) * 4;
+
+                const alpha = imageData.data[index + 3];
+                if (alpha === 0) {
+                    continue;
+                }
+
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x);
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+            }
+        }
+
+        const croppedCanvas = document.createElement("canvas");
+        croppedCanvas.width = maxX - minX;
+        croppedCanvas.height = maxY - minY;
+        const ctx = croppedCanvas.getContext("2d")!;
+        ctx.drawImage(
+            canvas,
+            minX,
+            minY,
+            croppedCanvas.width,
+            croppedCanvas.height,
+            0,
+            0,
+            croppedCanvas.width,
+            croppedCanvas.height,
+        );
+
+        // Save as image
+
         const link = document.createElement("a");
-        link.href = dataUrl;
+        link.href = croppedCanvas.toDataURL();
         link.download = `typecircuits-${Date.now()}.png`;
         link.click();
 
