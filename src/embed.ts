@@ -35,6 +35,7 @@ export const parseEmbed = (data: any): compiler.CompilerOutput => {
                                 tag: "embed",
                                 children: [],
                                 display: () => label,
+                                isFunction: label.includes("->"),
                             }),
                         ),
                     },
