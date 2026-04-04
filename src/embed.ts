@@ -39,7 +39,9 @@ export const parseEmbed = (
                                 tag: "embed",
                                 children: [],
                                 display: () => label,
-                                isFunction: label.includes("->"),
+                                isFunction:
+                                    label.includes("->") ||
+                                    (label.startsWith("{") && label.endsWith("}")),
                             }),
                         ),
                         conflict: group.conflict,
