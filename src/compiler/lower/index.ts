@@ -122,7 +122,7 @@ export class LowerContext {
                 if (group.types.some((type) => isConstructedType(type) && type.isFunction)) {
                     result.groups.groups.delete(representative);
                     for (const node of group.nodes) {
-                        this.nodes.delete(node);
+                        result.nodes = result.nodes.filter((n) => n !== node);
                     }
                 }
             }

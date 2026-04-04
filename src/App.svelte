@@ -269,6 +269,7 @@
         if (query.has("embed")) {
             embed = true;
             fullscreen = true;
+            options.showFunctionsAndStatements = true;
 
             window.addEventListener("message", (event) => {
                 if (typeof event.data === "object" && "embed" in event.data) {

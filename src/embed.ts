@@ -42,6 +42,7 @@ export const parseEmbed = (
                                 isFunction: label.includes("->"),
                             }),
                         ),
+                        conflict: group.conflict,
                     },
                 ]),
             ),

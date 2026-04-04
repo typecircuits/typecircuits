@@ -93,6 +93,7 @@ export class Solver {
                     types.size > 0
                         ? types.toArray().map((type) => this.apply(type))
                         : [representative],
+                conflict: types.size > 1,
             };
 
             groups.set(representative, group);
@@ -109,6 +110,7 @@ export class Solver {
                 groups.set(representative, {
                     nodes: new Set([representative, node]),
                     types: [representative],
+                    conflict: false,
                 });
             }
 
@@ -228,6 +230,7 @@ export class Solver {
 export interface Group {
     nodes: Set<Node>;
     types: Type[];
+    conflict: boolean;
 }
 
 export class Groups {

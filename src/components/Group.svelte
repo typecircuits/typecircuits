@@ -4,9 +4,7 @@
 
     const { data, width, height } = $props();
 
-    const kind = $derived(
-        data.labels.length === 0 ? undefined : data.labels.length > 1 ? "conflict" : "typed",
-    );
+    const kind = $derived(data.conflict ? "conflict" : "typed");
 
     const isActive = $derived(
         activeNodes.current.length === 0 ||

@@ -91,6 +91,7 @@
                             color: groupColor(group),
                             nodes: children.map(({ node }) => node),
                             labels: group.types.map((type) => compiler.displayType(type)),
+                            conflict: group.conflict,
                             options,
                             onmouseenter: () => {
                                 selectedGroup = group;
