@@ -272,7 +272,7 @@
 
             window.addEventListener("message", (event) => {
                 if (typeof event.data === "object" && "embed" in event.data) {
-                    graphData = parseEmbed(event.data.embed);
+                    graphData = parseEmbed(event.data.embed, options);
                 }
             });
 

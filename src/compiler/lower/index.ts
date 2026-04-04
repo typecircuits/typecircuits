@@ -26,7 +26,7 @@ export type CompilerOutput = ReturnType<LowerContext["finish"]>;
 export class LowerContext {
     options: Record<string, boolean>;
     thisType?: Type;
-    private nodes = new Set<Node>();
+    nodes = new Set<Node>();
     private edges: Edge[] = [];
     private scopes: Scope[] = [];
     private solver = new Solver();
@@ -96,10 +96,7 @@ export class LowerContext {
 
     finish() {
         for (const node of [...this.nodes]) {
-            if (
-                node.display === "hidden" ||
-                (!this.options.showFunctionsAndStatements && node.display === "untyped")
-            ) {
+            if (node.display === "hidden") {
                 this.nodes.delete(node);
             }
         }
@@ -110,22 +107,25 @@ export class LowerContext {
 
         const groups = this.solver.run(this.nodes);
 
-        // Hide functions if requested
+        return {
+            nodes: Array.from(this.nodes),
+            edges,
+            groups,
+        };
+    }
+
+    postProcess(result: ReturnType<typeof this.finish>) {
         if (!this.options.showFunctionsAndStatements) {
-            for (const [representative, group] of groups.groups) {
+            result.nodes = result.nodes.filter((node) => node.display !== "untyped");
+
+            for (const [representative, group] of result.groups.groups) {
                 if (group.types.some((type) => isConstructedType(type) && type.isFunction)) {
-                    groups.groups.delete(representative);
+                    result.groups.groups.delete(representative);
                     for (const node of group.nodes) {
                         this.nodes.delete(node);
                     }
                 }
             }
         }
-
-        return {
-            nodes: Array.from(this.nodes),
-            edges,
-            groups,
-        };
     }
 }

@@ -1,4 +1,5 @@
 import * as compiler from "@/compiler";
+import { LowerContext } from "./compiler/lower";
 
 class EmbedNode extends compiler.Node {
     constructor(span: compiler.Span) {
@@ -8,7 +9,10 @@ class EmbedNode extends compiler.Node {
     lower() {}
 }
 
-export const parseEmbed = (data: any): compiler.CompilerOutput => {
+export const parseEmbed = (
+    data: any,
+    options: Record<string, boolean>,
+): compiler.CompilerOutput => {
     const nodes = Object.fromEntries<compiler.Node>(
         data.nodes.map((node: any) => {
             const embedNode = new EmbedNode(node.span);
@@ -17,7 +21,7 @@ export const parseEmbed = (data: any): compiler.CompilerOutput => {
         }),
     );
 
-    return {
+    const result = {
         nodes: Object.values(nodes),
         edges: (data.edges as any[]).map((edge) => ({
             from: nodes[edge.from],
@@ -43,4 +47,8 @@ export const parseEmbed = (data: any): compiler.CompilerOutput => {
             ),
         ),
     };
+
+    new LowerContext(options).postProcess(result);
+
+    return result;
 };
