@@ -50,7 +50,11 @@ export const compiler = async (
             ctx.lower(statement);
         }
 
-        return ctx.finish();
+        const result = ctx.finish();
+
+        ctx.postProcess(result);
+
+        return result;
     };
 };
 
