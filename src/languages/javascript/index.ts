@@ -4,7 +4,7 @@ import * as nodes from "./nodes";
 
 const defaultOptions = {};
 
-export default await compiler(treeSitterJavascript, defaultOptions, {
+export default compiler(treeSitterJavascript, defaultOptions, {
     identifier: nodes.IdentifierNode,
     property_identifier: nodes.PropertyIdentifierNode,
     member_expression: nodes.MemberExpressionNode,

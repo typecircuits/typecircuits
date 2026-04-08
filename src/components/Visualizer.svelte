@@ -1,29 +1,24 @@
 <script lang="ts">
-    import {
-        SvelteFlowProvider,
-        getNodesBounds as svelteFlowGetNodesBounds,
-        useSvelteFlow,
-    } from "@xyflow/svelte";
+    import { SvelteFlowProvider, useSvelteFlow } from "@xyflow/svelte";
     import Graph from "@/components/Graph.svelte";
-    import languages from "@/languages";
-    import * as compiler from "@/compiler";
+    import type { Compiler, CompilerOutput, Group, Node } from "@/compiler";
 
     interface Props {
         preview?: boolean;
         embed?: boolean;
-        language: string;
+        compiler: Compiler;
         code: string;
         options: Record<string, boolean>;
         selections: [number, number][];
-        graphData?: compiler.CompilerOutput;
-        selectedGroup?: compiler.Group;
-        filter: (node: compiler.Node) => boolean;
+        graphData?: CompilerOutput;
+        selectedGroup?: Group;
+        filter: (node: Node) => boolean;
     }
 
     let {
         preview,
         embed,
-        language,
+        compiler,
         code,
         options,
         selections = $bindable(),
@@ -60,52 +55,48 @@
     let status = $state<string>();
     let keyItems = $state<string[]>([]);
 
-    const update = debounce(
-        50,
-        async (language: string, code: string, options: Record<string, boolean>) => {
-            status =
-                selections.length > 0
-                    ? `Filtering by selection (hold ${metaKey} to select multiple)`
-                    : "Showing all (select code to filter)";
+    const update = debounce(50, async (code: string, options: Record<string, boolean>) => {
+        status =
+            selections.length > 0
+                ? `Filtering by selection (hold ${metaKey} to select multiple)`
+                : "Showing all (select code to filter)";
 
-            graphData = languages[language].compiler(code, $state.snapshot(options));
+        graphData = compiler(code, $state.snapshot(options));
 
-            filter = (node: compiler.Node) =>
-                node.display !== "hidden" &&
-                (selections.length === 0 ||
-                    selections.some(
-                        ([from, to]) =>
-                            node.span != null &&
-                            node.span.start.index >= from &&
-                            node.span.end.index <= to,
-                    ));
+        filter = (node: Node) =>
+            node.display !== "hidden" &&
+            (selections.length === 0 ||
+                selections.some(
+                    ([from, to]) =>
+                        node.span != null &&
+                        node.span.start.index >= from &&
+                        node.span.end.index <= to,
+                ));
 
-            const newKeyItems = new Set<string>();
-            for (const group of graphData.groups.groups.values()) {
-                if (group.types.length === 0) {
-                    newKeyItems.add("Other");
-                } else if (group.types.length === 1) {
-                    newKeyItems.add("Expressions");
-                } else {
-                    newKeyItems.add("Conflicts");
-                }
+        const newKeyItems = new Set<string>();
+        for (const group of graphData.groups.groups.values()) {
+            if (group.types.length === 0) {
+                newKeyItems.add("Other");
+            } else if (group.types.length === 1) {
+                newKeyItems.add("Expressions");
+            } else {
+                newKeyItems.add("Conflicts");
             }
+        }
 
-            // Enforce consistent order
-            keyItems = [];
-            for (const key of Object.keys(keyStyles)) {
-                if (newKeyItems.has(key)) {
-                    keyItems.push(key);
-                }
+        // Enforce consistent order
+        keyItems = [];
+        for (const key of Object.keys(keyStyles)) {
+            if (newKeyItems.has(key)) {
+                keyItems.push(key);
             }
-        },
-    );
+        }
+    });
 
     $effect(() => {
         if (embed) return;
 
         update(
-            language,
             code,
             // Note: object spread is needed to deeply track options, since
             // `$state.snapshot` is used in `update`

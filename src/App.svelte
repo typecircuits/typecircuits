@@ -14,7 +14,7 @@
     import Icon from "./components/Icon.svelte";
     import { onMount } from "svelte";
     import { toCanvas } from "html-to-image";
-    import * as compiler from "@/compiler";
+    import type { CompilerOutput, Node as CompilerNode, Group as CompilerGroup } from "./compiler";
     import PrintView from "./components/PrintView.svelte";
     import Visualizer from "./components/Visualizer.svelte";
     import Examples from "./components/Examples.svelte";
@@ -26,6 +26,7 @@
     import LanguageDropdown from "./components/LanguageDropdown.svelte";
     import { parseEmbed } from "./embed";
     import { getViewportForBounds } from "@xyflow/svelte";
+    import Group from "./components/Group.svelte";
 
     let participantId = $state(localStorage.getItem("participantId"));
 
@@ -64,10 +65,12 @@
     let selections = $state<[number, number][]>([]);
     let errorMessage = $state("");
     let options = $state<Record<string, boolean>>(sharedOptions);
-    let graphData = $state<compiler.CompilerOutput>();
-    let selectedGroup = $state<compiler.Group>();
-    let filter = $state<(node: compiler.Node) => boolean>(() => true);
+    let graphData = $state<CompilerOutput>();
+    let selectedGroup = $state<CompilerGroup>();
+    let filter = $state<(node: CompilerNode) => boolean>(() => true);
     let embed = $state(false);
+
+    const compiler = $derived(languages[language].compiler());
 
     const defaultOptions = $derived({ ...sharedOptions, ...languages[language].options });
 
@@ -402,17 +405,19 @@
         {/if}
 
         <div class={["flex-2 border-black/5", fullscreen ? "" : "rounded-lg border-[1.5px]"]}>
-            <Visualizer
-                bind:this={visualizer}
-                {language}
-                {embed}
-                {code}
-                {options}
-                bind:selections
-                bind:graphData
-                bind:selectedGroup
-                bind:filter
-            />
+            {#await compiler then compiler}
+                <Visualizer
+                    bind:this={visualizer}
+                    {compiler}
+                    {embed}
+                    {code}
+                    {options}
+                    bind:selections
+                    bind:graphData
+                    bind:selectedGroup
+                    bind:filter
+                />
+            {/await}
         </div>
     </div>
 </div>
@@ -428,7 +433,9 @@
 
 {#if showExamples}
     <Modal width="800px" height="650px" onclose={oncloseexamples}>
-        <Examples bind:language onclick={onclickexample} onclose={oncloseexamples} />
+        {#await compiler then compiler}
+            <Examples bind:language {compiler} onclick={onclickexample} onclose={oncloseexamples} />
+        {/await}
     </Modal>
 {/if}
 

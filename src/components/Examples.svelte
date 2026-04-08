@@ -4,14 +4,16 @@
     import Visualizer from "./Visualizer.svelte";
     import LanguageDropdown from "./LanguageDropdown.svelte";
     import { sharedOptions } from "@/App.svelte";
+    import type { Compiler } from "@/compiler";
 
     interface Props {
         language: string;
+        compiler: Compiler;
         onclick: (example: Example) => void;
         onclose: () => void;
     }
 
-    let { language = $bindable(), onclick, onclose }: Props = $props();
+    let { language = $bindable(), compiler, onclick, onclose }: Props = $props();
 </script>
 
 <div class="flex size-full flex-col">
@@ -52,7 +54,7 @@
                         <div class="flex h-[175px]">
                             <Visualizer
                                 preview
-                                {language}
+                                {compiler}
                                 code={example.code}
                                 options={{ ...sharedOptions, ...example.options }}
                                 selections={example.selections ?? []}

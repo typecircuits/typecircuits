@@ -4,7 +4,7 @@ import * as nodes from "./nodes";
 
 const defaultOptions = {};
 
-export default await compiler(treeSitterPython, defaultOptions, {
+export default compiler(treeSitterPython, defaultOptions, {
     identifier: nodes.IdentifierNode,
     attribute: nodes.AttributeNode,
     assignment: nodes.AssignmentNode,

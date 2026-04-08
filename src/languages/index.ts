@@ -5,7 +5,7 @@ import csharpCompiler from "./csharp";
 import type { Compiler } from "@/compiler";
 
 interface Language {
-    compiler: Compiler;
+    compiler: () => Promise<Compiler>;
     options: Record<string, boolean>;
 }
 

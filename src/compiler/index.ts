@@ -11,50 +11,58 @@ await ts.Parser.init({ locateFile: () => treeSitterWasmUrl });
 
 export type Compiler = (source: string, options: Record<string, boolean>) => CompilerOutput;
 
-export const compiler = async (
+export const compiler = (
     treeSitterUrl: string,
     defaultOptions: Record<string, boolean>,
     rules: Record<string, typeof Node>,
-): Promise<Compiler> => {
-    const parser = new ts.Parser();
-    parser.setLanguage(await ts.Language.load(treeSitterUrl));
+) => {
+    let language: ts.Language | undefined;
 
-    return (source, options) => {
-        for (const key in defaultOptions) {
-            options[key] ??= defaultOptions[key];
+    return async (): Promise<Compiler> => {
+        if (!language) {
+            language = await ts.Language.load(treeSitterUrl);
         }
 
-        const ctx = new LowerContext(options);
+        const parser = new ts.Parser();
+        parser.setLanguage(language);
 
-        const cursor = parser.parse(source);
-        if (cursor == null) {
-            return ctx.finish();
-        }
-
-        const parse: Parse = (syntaxNode) => {
-            if (syntaxNode == null) {
-                return [];
-            } else if (Array.isArray(syntaxNode)) {
-                return syntaxNode.flatMap(parse);
-            } else if (syntaxNode.type in rules) {
-                const node = new (rules[syntaxNode.type] as any)(syntaxNode, parse);
-                return [node];
-            } else {
-                // Pass through
-                return parse(syntaxNode.namedChildren);
+        return (source, options) => {
+            for (const key in defaultOptions) {
+                options[key] ??= defaultOptions[key];
             }
+
+            const ctx = new LowerContext(options);
+
+            const cursor = parser.parse(source);
+            if (cursor == null) {
+                return ctx.finish();
+            }
+
+            const parse: Parse = (syntaxNode) => {
+                if (syntaxNode == null) {
+                    return [];
+                } else if (Array.isArray(syntaxNode)) {
+                    return syntaxNode.flatMap(parse);
+                } else if (syntaxNode.type in rules) {
+                    const node = new (rules[syntaxNode.type] as any)(syntaxNode, parse);
+                    return [node];
+                } else {
+                    // Pass through
+                    return parse(syntaxNode.namedChildren);
+                }
+            };
+
+            const file = parse(cursor.rootNode);
+            for (const statement of file) {
+                ctx.lower(statement);
+            }
+
+            const result = ctx.finish();
+
+            ctx.postProcess(result);
+
+            return result;
         };
-
-        const file = parse(cursor.rootNode);
-        for (const statement of file) {
-            ctx.lower(statement);
-        }
-
-        const result = ctx.finish();
-
-        ctx.postProcess(result);
-
-        return result;
     };
 };
 

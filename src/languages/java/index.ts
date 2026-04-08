@@ -6,7 +6,7 @@ const defaultOptions = {
     showTypes: true,
 };
 
-export default await compiler(treeSitterJava, defaultOptions, {
+export default compiler(treeSitterJava, defaultOptions, {
     identifier: nodes.IdentifierNode,
     type_identifier: nodes.TypeIdentifierNode,
     underscore_pattern: nodes.UnderscorePatternNode,

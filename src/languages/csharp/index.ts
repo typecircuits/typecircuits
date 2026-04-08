@@ -6,7 +6,7 @@ const defaultOptions = {
     showTypes: true,
 };
 
-export default await compiler(treeSitterCSharp, defaultOptions, {
+export default compiler(treeSitterCSharp, defaultOptions, {
     identifier: nodes.IdentifierNode,
     type: nodes.TypeNode,
     implicit_type: nodes.ImplicitTypeNode,
