@@ -1,6 +1,5 @@
 <script lang="ts">
     import * as compiler from "@/compiler";
-    import html2pdf from "html2pdf.js";
     import Node from "./Node.svelte";
     import { nodeMargin } from "@/util/layout";
 
@@ -83,6 +82,8 @@
     });
 
     const print = async () => {
+        const { default: html2pdf } = await import("html2pdf.js");
+
         const scale = 4;
         const filename = `typecircuits-${Date.now()}.pdf`;
 
