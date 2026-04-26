@@ -298,14 +298,17 @@
     const onscan = () => {
         if (graphData == null) return;
 
-        const cards = graphData.nodes.map((node) => node.span.source);
+        const nodes = graphData.groups.nodes().filter(filter).toArray();
+
+        const cards = nodes.map((node) => node.span.source);
 
         const groups = graphData.groups
             .all()
             .map((group) =>
                 group.nodes
                     .values()
-                    .map((node) => cards.indexOf(node.span.source))
+                    .filter(filter)
+                    .map((node) => nodes.indexOf(node))
                     .toArray(),
             )
             .toArray();
