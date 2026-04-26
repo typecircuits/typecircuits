@@ -295,15 +295,26 @@
         if (query.has("selections")) selections = parseSelections(query.get("selections")!);
     });
 
-    const onclear = () => {
-        if (code) {
-            const confirmed = confirm("This will clear your current code. Are you sure?");
-            if (!confirmed) return;
-        }
+    const onscan = () => {
+        if (graphData == null) return;
 
-        code = "";
-        selections = [];
-        errorMessage = "";
+        const cards = graphData.nodes.map((node) => node.span.source);
+
+        const groups = graphData.groups
+            .all()
+            .map((group) =>
+                group.nodes
+                    .values()
+                    .map((node) => cards.indexOf(node.span.source))
+                    .toArray(),
+            )
+            .toArray();
+
+        const data = { cards, groups };
+
+        const url = new URL(import.meta.env.VITE_SCAN_URL);
+        url.searchParams.set("data", JSON.stringify(data));
+        window.open(url.toString(), "_blank");
     };
 </script>
 
@@ -375,6 +386,11 @@
                                 </MenuButton>
                             {/snippet}
                         </Menu>
+
+                        <Button onclick={onscan}>
+                            <Icon>qr_code_scanner</Icon>
+                            Scan
+                        </Button>
                     </div>
                 {/if}
 
