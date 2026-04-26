@@ -15,7 +15,7 @@
     import { onMount } from "svelte";
     import { toCanvas } from "html-to-image";
     import type { CompilerOutput, Node as CompilerNode, Group as CompilerGroup } from "./compiler";
-    import PrintView from "./components/PrintView.svelte";
+    import PrintView, { type PrintOptions } from "./components/PrintView.svelte";
     import Visualizer from "./components/Visualizer.svelte";
     import Examples from "./components/Examples.svelte";
     import { debounce } from "./util/debounce";
@@ -26,7 +26,8 @@
     import LanguageDropdown from "./components/LanguageDropdown.svelte";
     import { parseEmbed } from "./embed";
     import { getViewportForBounds } from "@xyflow/svelte";
-    import Group from "./components/Group.svelte";
+    import Menu from "./components/Menu.svelte";
+    import MenuButton from "./components/MenuButton.svelte";
 
     let participantId = $state(localStorage.getItem("participantId"));
 
@@ -223,7 +224,7 @@
         analytics.sendEvent(participantId, { type: "save" });
     };
 
-    let printing = $state(false);
+    let printing = $state<PrintOptions>();
 
     $effect(() => {
         if (printing) {
@@ -356,10 +357,24 @@
                             Save
                         </Button>
 
-                        <Button onclick={() => (printing = true)}>
-                            <Icon>print</Icon>
-                            Print
-                        </Button>
+                        <Menu>
+                            <Button>
+                                <Icon>print</Icon>
+                                Print
+                            </Button>
+
+                            {#snippet items()}
+                                <MenuButton onclick={() => (printing = {})}>
+                                    <Icon>draft</Icon>
+                                    Standard
+                                </MenuButton>
+
+                                <MenuButton onclick={() => (printing = { trackers: true })}>
+                                    <Icon>qr_code_scanner</Icon>
+                                    With Trackers
+                                </MenuButton>
+                            {/snippet}
+                        </Menu>
                     </div>
                 {/if}
 
@@ -422,12 +437,13 @@
     </div>
 </div>
 
-{#if graphData != null && printing}
+{#if graphData != null && printing != null}
     <PrintView
         {code}
         {errorMessage}
+        options={printing}
         nodes={graphData.groups.nodes().filter(filter).toArray()}
-        onfinish={() => (printing = false)}
+        onfinish={() => (printing = undefined)}
     />
 {/if}
 

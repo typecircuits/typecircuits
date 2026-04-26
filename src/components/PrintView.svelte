@@ -1,3 +1,9 @@
+<script module lang="ts">
+    export interface PrintOptions {
+        trackers?: boolean;
+    }
+</script>
+
 <script lang="ts">
     import * as compiler from "@/compiler";
     import Node from "./Node.svelte";
@@ -6,11 +12,12 @@
     interface Props {
         code: string;
         errorMessage?: string;
+        options: PrintOptions;
         nodes: compiler.Node[];
         onfinish: () => void;
     }
 
-    const { code, errorMessage, nodes, onfinish }: Props = $props();
+    const { code, errorMessage, nodes, options, onfinish }: Props = $props();
 
     let container: HTMLDivElement;
 
@@ -124,9 +131,16 @@
         {/if}
     </div>
 
-    {#each nodes as node}
+    {#each nodes as node, index}
         <div class="inline-block">
-            <Node data={{ node }} scale={1.5} inGraph={false} />
+            <Node
+                data={{ node }}
+                fontSize={24}
+                paddingX={16}
+                paddingY={24}
+                inGraph={false}
+                tracker={options.trackers ? { index } : undefined}
+            />
         </div>
     {/each}
 </div>
