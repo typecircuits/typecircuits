@@ -157,5 +157,21 @@
                 {/each}
             </div>
         {/if}
+
+        {#if embed}
+            <a
+                href="https://typecircuits.org"
+                target="_blank"
+                class="absolute right-[10px] bottom-[10px] z-10 flex flex-row items-center justify-center gap-[6px] rounded-lg border-[1.5px] border-black/5 bg-white px-[6px] py-[4px] text-xs hover:bg-gray-100"
+            >
+                <img
+                    src="https://typecircuits.org/logo.png"
+                    alt="Type Circuits"
+                    class="size-[20px]"
+                />
+
+                <p class="font-medium">Type Circuits</p>
+            </a>
+        {/if}
     {/if}
 </div>
