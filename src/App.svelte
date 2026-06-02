@@ -1,30 +1,42 @@
 <script module lang="ts">
     const imageSize = 1500;
 
-    export const sharedOptions = {
+    export type Options = typeof defaultOptions;
+
+    export const defaultOptions = {
         showGroups: true,
-        showFunctionsAndStatements: false,
+        showTypes: true,
+        showFunctions: false,
     };
+
+    export const selectionFilter = (selections: [number, number][]) => (node: compiler.Node) =>
+        selections.length === 0 ||
+        selections.some(
+            ([from, to]) =>
+                node.startIndex != null &&
+                node.startIndex >= from &&
+                node.endIndex != null &&
+                node.endIndex <= to,
+        );
 </script>
 
 <script lang="ts">
     import Editor from "@/components/Editor.svelte";
-    import languages from "@/languages";
+    import * as compiler from "@/compiler";
+    import { embeddedLanguage, languages as languages } from "@/languages";
     import Button from "@/components/Button.svelte";
     import Icon from "./components/Icon.svelte";
     import { onMount } from "svelte";
     import { toCanvas } from "html-to-image";
-    import type { CompilerOutput, Node as CompilerNode, Group as CompilerGroup } from "./compiler";
     import PrintView, { type PrintOptions } from "./components/PrintView.svelte";
     import Visualizer from "./components/Visualizer.svelte";
     import Examples from "./components/Examples.svelte";
     import { debounce } from "./util/debounce";
     import type { Example } from "./examples";
     import Modal from "./components/Modal.svelte";
-    import Options from "./components/Options.svelte";
+    import OptionsSelector from "./components/Options.svelte";
     import * as analytics from "./analytics";
     import LanguageDropdown from "./components/LanguageDropdown.svelte";
-    import { parseEmbed } from "./embed";
     import { getViewportForBounds } from "@xyflow/svelte";
     import Menu from "./components/Menu.svelte";
     import MenuButton from "./components/MenuButton.svelte";
@@ -61,35 +73,44 @@
     });
 
     let visualizer = $state<Visualizer>();
-    let language = $state(Object.keys(languages)[0]);
+    let language = $state<compiler.Language>();
     let code = $state("");
     let selections = $state<[number, number][]>([]);
     let errorMessage = $state("");
-    let options = $state<Record<string, boolean>>(sharedOptions);
-    let graphData = $state<CompilerOutput>();
-    let selectedGroup = $state<CompilerGroup>();
-    let filter = $state<(node: CompilerNode) => boolean>(() => true);
+    let options = $state(defaultOptions);
+    let selectedGroup = $state<compiler.Group>();
     let embed = $state(false);
 
-    const compiler = $derived(languages[language].compiler());
+    const resolvedLanguage = $derived(language?.init());
 
-    const defaultOptions = $derived({ ...sharedOptions, ...languages[language].options });
+    let compileResult = $state<compiler.CompileResult>();
 
     $effect(() => {
-        options = defaultOptions;
+        code;
+        $state.snapshot(options); // react to each option
+        resolvedLanguage?.then((language) => {
+            compileResult = language.compile(code, options);
+        });
     });
 
-    const highlightedRanges = $derived.by(
-        () =>
-            selectedGroup?.nodes
+    const filter = $derived(selectionFilter(selections));
+
+    const highlightedRanges = $derived.by(() => {
+        if (compileResult == null || selectedGroup == null) {
+            return [];
+        }
+
+        return (
+            selectedGroup.nodes
                 .values()
                 .flatMap((node): [number, number][] =>
-                    node.display !== "hidden"
-                        ? [[node.span!.start.index, node.span!.end.index]]
+                    node.startIndex != null && node.endIndex != null
+                        ? [[node.startIndex, node.endIndex]]
                         : [],
                 )
-                .toArray() ?? [],
-    );
+                .toArray() ?? []
+        );
+    });
 
     const stringifySelections = (selections: [number, number][]) =>
         selections.map(([start, end]) => `${start}-${end}`).join(",");
@@ -103,8 +124,10 @@
     };
 
     const update = debounce(50, async () => {
+        if (language == null) return;
+
         const url = new URL(window.location.href);
-        url.searchParams.set("language", language);
+        url.searchParams.set("language", language.name);
         url.searchParams.set("code", code);
         url.searchParams.set("selections", stringifySelections(selections));
         url.searchParams.set("errorMessage", errorMessage);
@@ -123,7 +146,7 @@
 
     let prevCodeState = "";
     const updateAnalytics = debounce(2500, () => {
-        const codeState = { language, code, selections, errorMessage };
+        const codeState = { language: language?.name, code, selections, errorMessage };
         const codeStateJson = JSON.stringify(codeState);
 
         if (codeStateJson === prevCodeState) return;
@@ -267,17 +290,17 @@
         showOptions = false;
     };
 
-    $effect.pre(() => {
+    onMount(() => {
         const query = new URLSearchParams(window.location.search);
 
         if (query.has("embed")) {
             embed = true;
             fullscreen = true;
-            options.showFunctionsAndStatements = query.has("showFunctionsAndStatements");
+            options.showFunctions = query.has("showFunctions");
 
             window.addEventListener("message", (event) => {
                 if (typeof event.data === "object" && "embed" in event.data) {
-                    graphData = parseEmbed(event.data.embed, options);
+                    language = embeddedLanguage("embed", event.data.embed);
                 }
             });
 
@@ -290,20 +313,32 @@
             fullscreen = true;
         }
 
-        if (query.has("language")) language = query.get("language")!;
-        if (query.has("code")) code = query.get("code")!;
-        if (query.has("selections")) selections = parseSelections(query.get("selections")!);
+        if (query.has("language")) {
+            const name = query.get("language")!;
+            language = languages.find((language) => language.name === name);
+        }
+
+        if (query.has("code")) {
+            code = query.get("code")!;
+        }
+
+        if (query.has("selections")) {
+            selections = parseSelections(query.get("selections")!);
+        }
+
+        if (language == null) {
+            language = languages[0];
+        }
     });
 
     const onscan = () => {
-        if (graphData == null) return;
+        if (compileResult == null) return;
 
-        const nodes = graphData.groups.nodes().filter(filter).toArray();
+        const nodes = compileResult.nodes.values().filter(filter).toArray();
 
-        const cards = nodes.map((node) => node.span.source);
+        const cards = nodes.map((node) => node.toString());
 
-        const groups = graphData.groups
-            .all()
+        const groups = Iterator.from(compileResult.groups)
             .map((group) =>
                 group.nodes
                     .values()
@@ -337,7 +372,9 @@
                     />
                 </a>
 
-                <LanguageDropdown bind:selection={language} />
+                {#if language != null}
+                    <LanguageDropdown bind:selection={language} />
+                {/if}
 
                 <Button onclick={() => (showOptions = true)}>
                     <Icon>more_horiz</Icon>
@@ -359,7 +396,7 @@
         {#if !fullscreen}
             <div class="flex flex-row items-center gap-[10px]">
                 {#if visualizer != null}
-                    {@const active = graphData != null && graphData.nodes.length > 0}
+                    {@const active = compileResult != null && compileResult.nodes.size > 0}
 
                     <div
                         class="flex flex-row items-center gap-[10px]"
@@ -427,55 +464,55 @@
                     fullscreen ? "" : "rounded-lg border-[1.5px]",
                 ]}
             >
-                <Editor
-                    {language}
-                    bind:code
-                    bind:selections
-                    {highlightedRanges}
-                    {fullscreen}
-                    onshowexamples={() => (showExamples = true)}
-                />
+                {#if language}
+                    <Editor
+                        {language}
+                        bind:code
+                        bind:selections
+                        {highlightedRanges}
+                        {fullscreen}
+                        onshowexamples={() => (showExamples = true)}
+                    />
+                {/if}
             </div>
         {/if}
 
         <div class={["flex-2 border-black/5", fullscreen ? "" : "rounded-lg border-[1.5px]"]}>
-            {#await compiler then compiler}
-                <Visualizer
-                    bind:this={visualizer}
-                    {compiler}
-                    {embed}
-                    {code}
-                    {options}
-                    bind:selections
-                    bind:graphData
-                    bind:selectedGroup
-                    bind:filter
-                />
-            {/await}
+            <Visualizer
+                bind:this={visualizer}
+                {compileResult}
+                {embed}
+                {options}
+                bind:selections
+                bind:selectedGroup
+            />
         </div>
     </div>
 </div>
 
-{#if graphData != null && printing != null}
+{#if compileResult != null && printing != null}
     <PrintView
         {code}
         {errorMessage}
         options={printing}
-        nodes={graphData.groups.nodes().filter(filter).toArray()}
+        nodes={compileResult.nodes.values().filter(filter).toArray()}
         onfinish={() => (printing = undefined)}
     />
 {/if}
 
-{#if showExamples}
+{#if showExamples && language != null}
     <Modal width="800px" height="650px" onclose={oncloseexamples}>
-        {#await compiler then compiler}
-            <Examples bind:language {compiler} onclick={onclickexample} onclose={oncloseexamples} />
-        {/await}
+        <Examples
+            bind:language
+            {resolvedLanguage}
+            onclick={onclickexample}
+            onclose={oncloseexamples}
+        />
     </Modal>
 {/if}
 
 {#if showOptions}
     <Modal width="400px" height="auto" onclose={oncloseoptions}>
-        <Options bind:options onclose={oncloseoptions} />
+        <OptionsSelector bind:options onclose={oncloseoptions} />
     </Modal>
 {/if}

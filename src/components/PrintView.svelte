@@ -5,7 +5,7 @@
 </script>
 
 <script lang="ts">
-    import * as compiler from "@/compiler";
+    import type * as compiler from "@/compiler";
     import Node from "./Node.svelte";
     import { nodeMargin } from "@/util/layout";
 

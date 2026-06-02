@@ -27,7 +27,7 @@ Research Activities:
         - [43, 48]
       errorMessage: "can't multiply sequence by non-int of type 'str'"
       options:
-        showFunctionsAndStatements: true
+        showFunctions: true
     - title: Letters
       code: |-
         letters = ["a", "b", "c"]
@@ -67,7 +67,7 @@ Research Activities:
         int n = scanner.next();
         System.out.println(n * n);
       options:
-        showFunctionsAndStatements: true
+        showFunctions: true
       selections:
         - [20, 34]
         - [80, 103]
@@ -106,19 +106,16 @@ Research Activities:
       errorMessage: "Operator '>' cannot be applied to operands of type 'string' and 'int'"
     - title: Square
       code: |-
-        class Console
-        {
-            string ReadLine();
-        }
+        string ReadLine();
 
         int n = Console.ReadLine();
         Console.WriteLine(n * n);
       options:
-        showFunctionsAndStatements: true
+        showFunctions: true
       selections:
-        - [20, 38]
-        - [42, 69]
-        - [88, 93]
+        - [0, 18]
+        - [20, 47]
+        - [66, 71]
       errorMessage: "Cannot implicitly convert type 'string' to 'int'"
     - title: Letters
       code: |-

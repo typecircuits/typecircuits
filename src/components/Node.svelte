@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Handle, Position } from "@xyflow/svelte";
-    import * as compiler from "@/compiler";
+    import type * as compiler from "@/compiler";
     import {
         nodeLabelFontFamily,
         nodeLabelFontSize,
@@ -73,7 +73,7 @@
         style:font-family={nodeLabelFontFamily}
         style:margin-top={height == null ? `-${nodePaddingY}px` : "-0.25lh"}
     >
-        {data.node.span.source}
+        {data.node.toString()}
     </code>
 </div>
 

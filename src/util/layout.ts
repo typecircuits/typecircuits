@@ -1,4 +1,4 @@
-import * as compiler from "@/compiler";
+import type * as compiler from "@/compiler";
 import ELK, { type ElkExtendedEdge, type ElkPort } from "elkjs/lib/elk.bundled";
 
 export const groupSeparation = 100;
@@ -15,9 +15,7 @@ const elk = new ELK();
 
 export const layout = async (
     direction: string,
-    groups: compiler.Groups,
-    nodes: compiler.Node[],
-    edges: compiler.Edge[],
+    compileResult: compiler.CompileResult,
     filter: (node: compiler.Node) => boolean,
 ) => {
     interface GroupData {
@@ -48,7 +46,7 @@ export const layout = async (
     })();
 
     const nodeIds = new Map<compiler.Node, string>();
-    for (const node of nodes) {
+    for (const node of compileResult.nodes) {
         if (!filter(node)) {
             continue;
         }
@@ -58,11 +56,10 @@ export const layout = async (
     }
 
     const groupData = new Map<compiler.Group, GroupData>();
-    for (const group of groups.all()) {
+    for (const group of compileResult.groups) {
         const nodes = group.nodes.values().filter(filter).toArray();
-        if (nodes.length === 0) continue;
 
-        nodes.sort((a, b) => a.span.start.index - b.span.start.index);
+        if (nodes.length === 0) continue;
 
         const data: GroupData = {
             id: `group${groupData.size}`,
@@ -79,9 +76,15 @@ export const layout = async (
             data.children.push({
                 id,
                 node,
-                width: fontWidth * node.span.source.length + nodePaddingX * 2,
+                width: fontWidth * node.toString().length + nodePaddingX * 2,
                 height: nodeLabelFontSize + nodePaddingY * 2,
             });
+        }
+    }
+
+    for (const [group, { children }] of groupData) {
+        if (children.length === 0) {
+            groupData.delete(group);
         }
     }
 
@@ -90,7 +93,9 @@ export const layout = async (
             node.ports = groupData
                 .values()
                 .filter(({ group }) =>
-                    edges.some((edge) => edge.to === node.node && group.nodes.has(edge.from)),
+                    compileResult.edges.some(
+                        (edge) => edge.to === node.node && group.nodes.has(edge.from),
+                    ),
                 )
                 .map(
                     (group): ElkPort => ({
@@ -112,10 +117,10 @@ export const layout = async (
     };
 
     const edgeIds: Set<string> = new Set();
-    let edgeData = edges.flatMap(({ from: source, to: target }) => {
+    let edgeData = compileResult.edges.flatMap(({ from: source, to: target }) => {
         const sourceId = nodeIds.get(source);
         const targetId = nodeIds.get(target);
-        const sourceGroup = groups.all().find((group) => group.nodes.has(source));
+        const sourceGroup = compileResult.groups.find((group) => group.nodes.has(source));
 
         if (sourceId == null || targetId == null || sourceGroup == null) {
             return [];

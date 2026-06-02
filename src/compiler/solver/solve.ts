@@ -1,65 +1,86 @@
-import { Map as ImmutableMap, List as ImmutableList } from "immutable";
-import { scoreType, traverseType, typeReferencesNode, typesAreEqual, type Type } from "./type";
+import { Context, Node } from "../index";
+import { List as ImmutableList } from "immutable";
+import {
+    traverseType,
+    typeReferencesNode,
+    typesAreEqual,
+    type ConstructedType,
+    type Type,
+} from "./type";
 import { UnionFind } from "./union-find";
-import { Node } from "../lower/node";
-
-export interface TypeConstraint {
-    node: Node;
-    type: Type;
-}
 
 export class Solver {
-    private typeConstraints: TypeConstraint[] = [];
-    private overloadConstraints: TypeConstraint[][][] = [];
     private unionFind = new UnionFind();
-    private groups = ImmutableMap<Node, ImmutableList<Type>>();
+    private groups = ImmutableList<[Node, ImmutableList<Type>]>();
     private error = false;
+    private temporaries = new Set<Node>();
 
-    typeConstraint(node: Node, type: Type) {
-        this.typeConstraints.push({ node, type });
-    }
+    constructor(private context: Context) {}
 
-    overloadConstraint(overloads: TypeConstraint[][]) {
-        this.overloadConstraints.push(overloads);
-    }
+    run() {
+        if (this.context == null) {
+            return new Groups(new Map());
+        }
 
-    run(nodes: Iterable<Node>): Groups {
         this.runTypeConstraints();
         this.runOverloadConstraints();
-        return this.toGroups(nodes);
+        return this.toGroups(this.context.nodes);
+    }
+
+    private temporary() {
+        const node = this.context.temporary();
+        this.temporaries.add(node);
+        return node;
+    }
+
+    private prepareTypeInConstraint(type: Type) {
+        // Replace `null` placeholders with temporaries
+        return traverseType(type, (type) => (type == null ? this.temporary() : type)) as Type;
     }
 
     private runTypeConstraints() {
-        // Form better groups by placing types referencing other nodes first
-        this.typeConstraints.sort((left, right) => scoreType(left.type) - scoreType(right.type));
+        while (this.context.groups.length > 0) {
+            const [representative, ...others] = this.context.groups.shift()!;
 
-        while (this.typeConstraints.length > 0) {
-            const constraint = this.typeConstraints.shift()!;
-            this.unify(constraint.node, constraint.type);
+            for (const other of others) {
+                this.unify(representative, other);
+            }
+        }
+
+        while (this.context.types.length > 0) {
+            let [node, type] = this.context.types.shift()!;
+            this.unify(node, this.prepareTypeInConstraint(type));
         }
     }
 
     private runOverloadConstraints() {
-        while (this.overloadConstraints.length > 0) {
-            const overloads = this.overloadConstraints.shift()!;
+        while (this.context.overloads.length > 0) {
+            const overloads = this.context.overloads
+                .shift()!
+                .map((overload) =>
+                    overload.map(([node, type]): [Node, Type] => [
+                        node,
+                        this.prepareTypeInConstraint(type),
+                    ]),
+                );
 
             if (overloads.length === 1) {
                 const [constraints] = overloads;
-                for (const constraint of constraints) {
-                    this.unify(constraint.node, constraint.type);
+                for (const [node, type] of constraints) {
+                    this.unify(node, type);
                 }
             }
 
             // First resolve each overload on a copy to avoid interfering with
             // existing types if it doesn't unify
-            let candidates: TypeConstraint[][] = [];
+            let candidates: [Node, Type][][] = [];
             overloads: for (const constraints of overloads) {
-                const copy = new Solver();
+                const copy = new Solver(this.context);
                 copy.unionFind = new UnionFind(this.unionFind);
-                copy.groups = ImmutableMap(this.groups);
+                copy.groups = ImmutableList(this.groups);
                 copy.error = false;
 
-                for (const { node, type } of constraints) {
+                for (const [node, type] of constraints) {
                     copy.unify(node, type);
                     if (copy.error) {
                         continue overloads;
@@ -77,7 +98,7 @@ export class Solver {
             // Now apply each candidate. If there are multiple candidates, the
             // nodes will have multiple (conflicting) types
             for (const constraints of candidates) {
-                for (const { node, type } of constraints) {
+                for (const [node, type] of constraints) {
                     this.unify(node, type);
                 }
             }
@@ -112,10 +133,6 @@ export class Solver {
                     types: [representative],
                     conflict: false,
                 });
-            }
-
-            if (node.display === "untyped") {
-                groups.get(representative)!.types = [];
             }
         }
 
@@ -183,7 +200,9 @@ export class Solver {
     private applyShallow(type: Type) {
         if (type instanceof Node) {
             const representative = this.unionFind.find(type);
-            return this.groups.get(representative)?.first() ?? representative;
+            return (
+                this.groups.find(([node]) => node === representative)?.[1].first() ?? representative
+            );
         } else {
             return type;
         }
@@ -198,17 +217,19 @@ export class Solver {
             return;
         }
 
-        if (!this.groups.has(representative)) {
-            this.groups = this.groups.set(representative, ImmutableList(types));
+        const index = this.groups.findIndex(([node]) => node === representative);
+
+        if (index === -1) {
+            this.groups = this.groups.push([representative, ImmutableList(types)]);
         } else {
-            let group = this.groups.get(representative)!;
+            let existing = this.groups.get(index)![1];
             for (const type of types) {
-                if (group.every((other) => !typesAreEqual(type, other))) {
-                    group = group.push(type);
+                if (existing.every((other) => !typesAreEqual(type, other))) {
+                    existing = existing.push(type);
                 }
             }
 
-            this.groups = this.groups.set(representative, group);
+            this.groups = this.groups.set(index, [representative, existing]);
         }
     }
 
@@ -218,11 +239,17 @@ export class Solver {
 
         this.unionFind.union(leftRepresentative, rightRepresentative);
 
-        const rightTypes = this.groups.get(rightRepresentative) ?? ImmutableList();
-        this.groups = this.groups.delete(rightRepresentative);
+        const index = this.groups.findIndex(
+            ([representative]) => representative === rightRepresentative,
+        );
 
-        for (const type of rightTypes) {
-            this.unify(leftRepresentative, type);
+        if (index !== -1) {
+            const rightTypes = this.groups.get(index)![1];
+            this.groups = this.groups.delete(index);
+
+            for (const type of rightTypes) {
+                this.unify(leftRepresentative, type);
+            }
         }
     }
 }
@@ -240,7 +267,7 @@ export class Groups {
         this.groups = groups;
     }
 
-    all() {
+    [Symbol.iterator]() {
         return this.groups.values();
     }
 

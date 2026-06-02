@@ -1,5 +1,5 @@
 <script lang="ts">
-    import * as compiler from "@/compiler";
+    import type * as compiler from "@/compiler";
     import { pathFromPoints } from "@/util/path";
     import { BaseEdge, EdgeLabel, type EdgeProps } from "@xyflow/svelte";
     import type { ElkEdgeSection } from "elkjs/lib/elk-api";
@@ -18,8 +18,8 @@
 
     const path = $derived(pathFromPoints(points));
 
-    const { label, description, example } = props.label as any as compiler.Edge;
-    const { color, source, target, options } = props.data as any;
+    const { label } = props.label as any as compiler.Edge;
+    const { color, target, options } = props.data as any;
 
     const isActive = $derived(
         activeNodes.current.length === 0 || activeNodes.current.includes(target),
@@ -30,16 +30,6 @@
     const showGroups = $derived(options.showGroups);
 
     const strokeColor = $derived(showGroups ? color : "gray");
-
-    let expanded = $state(false);
-
-    const onmouseenter = () => {
-        expanded = true;
-    };
-
-    const onmouseleave = () => {
-        expanded = false;
-    };
 </script>
 
 <BaseEdge
@@ -53,29 +43,10 @@
     <div
         role="tooltip"
         class={[
-            "rounded-[12px] border-1 border-gray-200 bg-white transition-opacity duration-75",
-            expanded ? "px-[8px] py-[4px]" : "px-[4px] py-[1px] text-[smaller]",
+            "rounded-[12px] border-1 border-gray-200 bg-white px-[4px] py-[1px] text-[smaller] transition-opacity duration-75",
             isActive ? "opacity-100" : "opacity-0",
         ]}
-        {onmouseenter}
-        {onmouseleave}
     >
-        {#if expanded}
-            <div class="flex max-w-[200px] flex-col gap-[2px] py-[4px] text-left">
-                <p class="font-semibold">{label}</p>
-                {#if description}
-                    <p>{description}</p>
-                {/if}
-                {#if example}
-                    <code
-                        >{example[0]}<span class="bg-blue-50 font-semibold text-blue-500"
-                            >{example[1]}</span
-                        >{example[2]}</code
-                    >
-                {/if}
-            </div>
-        {:else}
-            {label}
-        {/if}
+        {label}
     </div>
 </EdgeLabel>

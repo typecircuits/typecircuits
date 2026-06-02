@@ -14,27 +14,17 @@
     import { syntaxHighlighting, defaultHighlightStyle, indentUnit } from "@codemirror/language";
     import { closeBrackets } from "@codemirror/autocomplete";
     import { onMount } from "svelte";
-    import { javascript } from "@codemirror/lang-javascript";
-    import { python } from "@codemirror/lang-python";
-    import { java } from "@codemirror/lang-java";
-    import { csharp } from "@replit/codemirror-lang-csharp";
     import equal from "fast-deep-equal";
+    import type { Language } from "@/compiler";
 
     interface Props {
-        language: string;
+        language: Language;
         code: string;
         selections: [number, number][];
         highlightedRanges: [number, number][];
         fullscreen: boolean;
         onshowexamples: () => void;
     }
-
-    const languages = {
-        JavaScript: javascript,
-        Python: python,
-        Java: java,
-        "C#": csharp,
-    };
 
     let {
         language,
@@ -131,9 +121,7 @@
 
     $effect(() => {
         view.dispatch({
-            effects: languageExtension.reconfigure(
-                languages[language as keyof typeof languages]() ?? languages.JavaScript(),
-            ),
+            effects: languageExtension.reconfigure(language.editorExtensions),
         });
     });
 

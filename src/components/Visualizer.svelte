@@ -1,39 +1,26 @@
 <script lang="ts">
     import { SvelteFlowProvider, useSvelteFlow } from "@xyflow/svelte";
     import Graph from "@/components/Graph.svelte";
-    import type { Compiler, CompilerOutput, Group, Node } from "@/compiler";
+    import type * as compiler from "@/compiler";
+    import { selectionFilter, type Options } from "@/App.svelte";
 
     interface Props {
         preview?: boolean;
         embed?: boolean;
-        compiler: Compiler;
-        code: string;
-        options: Record<string, boolean>;
         selections: [number, number][];
-        graphData?: CompilerOutput;
-        selectedGroup?: Group;
-        filter: (node: Node) => boolean;
+        compileResult: compiler.CompileResult | undefined;
+        selectedGroup?: compiler.Group;
+        options: Options;
     }
 
     let {
         preview,
         embed,
-        compiler,
-        code,
-        options,
+        compileResult,
         selections = $bindable(),
-        graphData = $bindable(),
         selectedGroup = $bindable(),
-        filter = $bindable(),
+        options,
     }: Props = $props();
-
-    const debounce = <T extends any[]>(timeout: number, f: (...args: T) => void) => {
-        let timeoutId: number;
-        return (...args: T) => {
-            window.clearTimeout(timeoutId);
-            timeoutId = window.setTimeout(() => f(...args), timeout);
-        };
-    };
 
     const metaKey = navigator.platform.startsWith("Mac") ? "⌘" : "Ctrl";
 
@@ -52,29 +39,18 @@
         },
     };
 
-    let status = $state<string>();
-    let keyItems = $state<string[]>([]);
+    const { status, keyItems } = $derived.by(() => {
+        if (compileResult == null) {
+            return { status: undefined, keyItems: [] };
+        }
 
-    const update = debounce(50, async (code: string, options: Record<string, boolean>) => {
-        status =
+        const status =
             selections.length > 0
                 ? `Filtering by selection (hold ${metaKey} to select multiple)`
                 : "Showing all (select code to filter)";
 
-        graphData = compiler(code, $state.snapshot(options));
-
-        filter = (node: Node) =>
-            node.display !== "hidden" &&
-            (selections.length === 0 ||
-                selections.some(
-                    ([from, to]) =>
-                        node.span != null &&
-                        node.span.start.index >= from &&
-                        node.span.end.index <= to,
-                ));
-
         const newKeyItems = new Set<string>();
-        for (const group of graphData.groups.groups.values()) {
+        for (const group of compileResult.groups) {
             if (group.types.length === 0) {
                 newKeyItems.add("Other");
             } else if (group.types.length === 1) {
@@ -85,23 +61,14 @@
         }
 
         // Enforce consistent order
-        keyItems = [];
+        const keyItems = [];
         for (const key of Object.keys(keyStyles)) {
             if (newKeyItems.has(key)) {
                 keyItems.push(key);
             }
         }
-    });
 
-    $effect(() => {
-        if (embed) return;
-
-        update(
-            code,
-            // Note: object spread is needed to deeply track options, since
-            // `$state.snapshot` is used in `update`
-            { ...options },
-        );
+        return { status, keyItems };
     });
 
     let svelteFlowContext = $state<ReturnType<typeof useSvelteFlow>>();
@@ -110,16 +77,16 @@
 </script>
 
 <div class="relative size-full overflow-clip">
-    {#if graphData != null}
+    {#if compileResult != null}
         <div class="absolute inset-0 flex">
             <SvelteFlowProvider>
                 <Graph
                     bind:context={svelteFlowContext!}
                     {preview}
                     bind:selectedGroup
-                    {filter}
+                    filter={selectionFilter(selections)}
+                    {compileResult}
                     {options}
-                    {...graphData}
                 />
             </SvelteFlowProvider>
         </div>

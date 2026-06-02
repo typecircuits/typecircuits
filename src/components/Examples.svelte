@@ -3,17 +3,17 @@
     import Icon from "./Icon.svelte";
     import Visualizer from "./Visualizer.svelte";
     import LanguageDropdown from "./LanguageDropdown.svelte";
-    import { sharedOptions } from "@/App.svelte";
-    import type { Compiler } from "@/compiler";
+    import { defaultOptions } from "@/App.svelte";
+    import type * as compiler from "@/compiler";
 
     interface Props {
-        language: string;
-        compiler: Compiler;
+        language: compiler.Language;
+        resolvedLanguage: Promise<compiler.ResolvedLanguage> | undefined;
         onclick: (example: Example) => void;
         onclose: () => void;
     }
 
-    let { language = $bindable(), compiler, onclick, onclose }: Props = $props();
+    let { language = $bindable(), resolvedLanguage, onclick, onclose }: Props = $props();
 </script>
 
 <div class="flex size-full flex-col">
@@ -33,10 +33,12 @@
 
     <div class="grid grid-cols-3 gap-[10px] overflow-scroll px-[20px] pb-[20px]">
         {#each Object.entries(examples) as [title, section]}
-            {#if language in section}
+            {#if language.name in section}
                 <h2 class="col-span-3 mt-[20px] text-xl font-semibold">{title}</h2>
 
-                {#each section[language] as example}
+                {#each section[language.name] as example}
+                    {@const options = { ...defaultOptions, ...example.options }}
+
                     <button
                         onclick={() => onclick(example)}
                         class="flex cursor-pointer flex-col gap-[4px] rounded-[10px] border-2 border-gray-50 p-[10px] hover:bg-gray-50"
@@ -52,14 +54,19 @@
                         {/if}
 
                         <div class="flex h-[175px]">
-                            <Visualizer
-                                preview
-                                {compiler}
-                                code={example.code}
-                                options={{ ...sharedOptions, ...example.options }}
-                                selections={example.selections ?? []}
-                                filter={(node) => node.display !== "hidden"}
-                            />
+                            {#await resolvedLanguage then resolvedLanguage}
+                                {#if resolvedLanguage != null}
+                                    <Visualizer
+                                        preview
+                                        {options}
+                                        selections={example.selections ?? []}
+                                        compileResult={resolvedLanguage.compile(
+                                            example.code,
+                                            options,
+                                        )}
+                                    />
+                                {/if}
+                            {/await}
                         </div>
                     </button>
                 {/each}

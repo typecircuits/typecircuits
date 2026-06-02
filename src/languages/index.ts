@@ -1,35 +1,14 @@
-import javascriptCompiler from "./javascript";
-import pythonCompiler from "./python";
-import javaCompiler from "./java";
-import csharpCompiler from "./csharp";
-import type { Compiler } from "@/compiler";
+import { customLanguage } from "@/compiler";
+import { javascript } from "./javascript";
+import { python } from "./python";
+import { java } from "./java";
+import { csharp } from "./csharp";
+import { embed, type EmbedOptions } from "@/compiler/features/embed";
 
-interface Language {
-    compiler: () => Promise<Compiler>;
-    options: Record<string, boolean>;
-}
+export const languages = [javascript, python, java, csharp];
 
-const languages: Record<string, Language> = {
-    JavaScript: {
-        compiler: javascriptCompiler,
-        options: {},
-    },
-    Python: {
-        compiler: pythonCompiler,
-        options: {},
-    },
-    Java: {
-        compiler: javaCompiler,
-        options: {
-            showTypes: true,
-        },
-    },
-    "C#": {
-        compiler: csharpCompiler,
-        options: {
-            showTypes: true,
-        },
-    },
-};
-
-export default languages;
+export const embeddedLanguage = (name: string, options: EmbedOptions) =>
+    customLanguage({
+        name,
+        features: [embed(options)],
+    });

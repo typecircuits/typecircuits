@@ -17,18 +17,19 @@
     import Group from "./Group.svelte";
     import Node from "./Node.svelte";
     import Edge from "./Edge.svelte";
-    import * as compiler from "@/compiler";
     import { groupLabelHeight, layout } from "@/util/layout";
     import Icon from "./Icon.svelte";
     import { debounce } from "@/util/debounce";
-    import type { CompilerOutput } from "@/compiler/lower";
+    import type * as compiler from "@/compiler";
+    import { displayType } from "@/compiler/solver/type";
 
-    interface Props extends CompilerOutput {
+    interface Props {
         context: ReturnType<typeof useSvelteFlow>;
         preview?: boolean;
         selectedGroup: compiler.Group | undefined;
         filter: (node: compiler.Node) => boolean;
         options: Record<string, any>;
+        compileResult: compiler.CompileResult;
     }
 
     let {
@@ -37,9 +38,7 @@
         selectedGroup = $bindable(),
         filter,
         options,
-        groups,
-        nodes,
-        edges,
+        compileResult,
     }: Props = $props();
 
     let direction = $state<"RIGHT" | "DOWN">("RIGHT");
@@ -58,9 +57,7 @@
         try {
             const { clusters, nodeIds, edgeCoordinates } = await layout(
                 direction,
-                groups,
-                nodes,
-                edges,
+                compileResult,
                 filter,
             );
 
@@ -90,7 +87,7 @@
                         data: {
                             color: groupColor(group),
                             nodes: children.map(({ node }) => node),
-                            labels: group.types.map((type) => compiler.displayType(type)),
+                            labels: group.types.map((type) => displayType(type)),
                             conflict: group.conflict,
                             options,
                             onmouseenter: () => {
@@ -122,7 +119,7 @@
                                     while (true) {
                                         let progress = false;
 
-                                        for (const edge of edges) {
+                                        for (const edge of compileResult.edges) {
                                             if (nodes.has(edge.to) && !nodes.has(edge.from)) {
                                                 nodes.add(edge.from);
                                                 progress = true;
@@ -152,14 +149,14 @@
                     return [groupNode, ...childNodes];
                 }),
 
-                edges: edges.flatMap((edge) => {
+                edges: compileResult.edges.flatMap((edge) => {
                     const { from: source, to: target } = edge;
 
                     const sourceId = nodeIds.get(source)!;
                     const targetId = nodeIds.get(target)!;
-                    const targetGroup = groups.groups
-                        .values()
-                        .find((group) => group.nodes.has(target));
+                    const targetGroup = compileResult.groups.find((group) =>
+                        group.nodes.has(target),
+                    );
 
                     if (targetGroup == null) {
                         console.warn("Missing target group for node:", target);
