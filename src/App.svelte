@@ -267,6 +267,8 @@
         }
     });
 
+    let preview = $state(false);
+
     let showExamples = $state(false);
 
     const onclickexample = (example: Example) => {
@@ -305,6 +307,10 @@
             window.parent.postMessage("requestEmbed", "*");
 
             return;
+        }
+
+        if (query.has("preview")) {
+            preview = true;
         }
 
         if (query.has("fullscreen")) {
@@ -476,6 +482,7 @@
                 bind:this={visualizer}
                 {compileResult}
                 {embed}
+                {preview}
                 bind:show
                 bind:selections
                 bind:selectedGroup

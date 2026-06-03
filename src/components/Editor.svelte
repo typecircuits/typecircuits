@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Compartment, EditorSelection, EditorState, RangeSet } from "@codemirror/state";
+    import { Compartment, EditorSelection, EditorState, Prec, RangeSet } from "@codemirror/state";
     import {
         Decoration,
         EditorView,
@@ -10,9 +10,16 @@
         placeholder,
     } from "@codemirror/view";
     import { minimalSetup } from "codemirror";
+    import { githubLight } from "@uiw/codemirror-theme-github";
     import { indentWithTab } from "@codemirror/commands";
-    import { syntaxHighlighting, defaultHighlightStyle, indentUnit } from "@codemirror/language";
+    import {
+        syntaxHighlighting,
+        defaultHighlightStyle,
+        indentUnit,
+        HighlightStyle,
+    } from "@codemirror/language";
     import { closeBrackets } from "@codemirror/autocomplete";
+    import { tags } from "@lezer/highlight";
     import { onMount } from "svelte";
     import equal from "fast-deep-equal";
     import type { Language } from "@/compiler";
@@ -47,6 +54,17 @@
             parent: editor,
             extensions: [
                 minimalSetup,
+                Prec.high([
+                    syntaxHighlighting(
+                        HighlightStyle.define([
+                            {
+                                tag: tags.variableName,
+                                color: "unset",
+                            },
+                        ]),
+                    ),
+                    githubLight,
+                ]),
                 lineNumbers(),
                 highlightActiveLine(),
                 closeBrackets(),
