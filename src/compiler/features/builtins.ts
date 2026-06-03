@@ -22,6 +22,7 @@ export const makeFunctionType =
     (inputs: Type[], output: Type) =>
         constructedType({
             tag: "function",
+            kind: "function",
             children: [output, ...inputs],
             display: ([output, ...inputs], root) => options.display(inputs, output, root),
         });

@@ -225,7 +225,7 @@ const compile = (root: Node | undefined, features: Feature[], show: Show) => {
     if (!show.functions) {
         for (const group of groups.groups.values()) {
             const hasFunctionType = group.types.some(
-                (type) => isConstructedType(type) && type.tag === "function",
+                (type) => isConstructedType(type) && type.kind === "function",
             );
 
             if (hasFunctionType) {

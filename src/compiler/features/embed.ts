@@ -17,7 +17,7 @@ export interface EmbedOptions {
     groups: {
         nodes: string[];
         labels: {
-            tag: string;
+            kind?: string;
             display: string;
         }[];
         conflict?: boolean;
@@ -57,9 +57,10 @@ export const embed =
             const representative = nodes.get(group.nodes[0])!;
 
             context.group(...group.nodes.map((id) => nodes.get(id)!));
-            for (const { tag, display } of group.labels) {
+            for (const { kind, display } of group.labels) {
                 context.type(representative, {
-                    tag,
+                    tag: display,
+                    kind,
                     children: [],
                     display: () => display,
                 });

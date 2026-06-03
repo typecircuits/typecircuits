@@ -4,6 +4,7 @@ export type Type = Node | ConstructedType | null;
 
 export interface ConstructedType {
     tag: string;
+    kind?: string;
     children: Type[];
     display: (children: string[], root: boolean) => string;
 }
