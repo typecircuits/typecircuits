@@ -106,16 +106,19 @@ Research Activities:
       errorMessage: "Operator '>' cannot be applied to operands of type 'string' and 'int'"
     - title: Square
       code: |-
-        string ReadLine();
+        class Console
+        {
+            string ReadLine();
+        }
 
         int n = Console.ReadLine();
         Console.WriteLine(n * n);
       show:
         functions: true
       selections:
-        - [0, 18]
-        - [20, 47]
-        - [66, 71]
+        - [20, 38]
+        - [42, 69]
+        - [88, 93]
       errorMessage: "Cannot implicitly convert type 'string' to 'int'"
     - title: Letters
       code: |-
