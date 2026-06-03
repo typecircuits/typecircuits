@@ -18,26 +18,26 @@ const listType = features.makeArrayType({
 });
 
 const builtinFunctions: features.BuiltinFunctionsOptions["functions"] = {
-    "console.log": {
+    "console.log": () => ({
         groups: [],
         overloads: [functionType([], voidType), functionType([null], voidType)],
-    },
-    "Math.random": {
+    }),
+    "Math.random": () => ({
         groups: [],
         overloads: [functionType([], numberType)],
-    },
-    String: {
+    }),
+    String: () => ({
         groups: [],
         overloads: [functionType([null], stringType)],
-    },
-    Number: {
+    }),
+    Number: () => ({
         groups: [],
         overloads: [functionType([null], numberType)],
-    },
-    Boolean: {
+    }),
+    Boolean: () => ({
         groups: [],
         overloads: [functionType([null], booleanType)],
-    },
+    }),
 };
 
 export const javascript = treesitterLanguage({
@@ -101,6 +101,7 @@ export const javascript = treesitterLanguage({
         features.builtinFunctions({
             call: [node("call_expression")],
             function: (node) => [node.children[0], node.children[0].text],
+            inputs: (node) => node.children[1].children,
             functions: builtinFunctions,
         }),
         features.builtinMathOperators({

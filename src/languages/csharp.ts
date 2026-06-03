@@ -18,14 +18,14 @@ const arrayType = features.makeArrayType({
 });
 
 const builtinFunctions: features.BuiltinFunctionsOptions["functions"] = {
-    "Console.WriteLine": {
+    "Console.WriteLine": () => ({
         groups: [],
         overloads: [functionType([], voidType), functionType([null], voidType)],
-    },
-    Length: {
+    }),
+    Length: () => ({
         groups: [],
         overloads: [intType],
-    },
+    }),
 };
 
 export const csharp = treesitterLanguage({
@@ -96,6 +96,7 @@ export const csharp = treesitterLanguage({
         features.builtinFunctions({
             call: [node("invocation_expression")],
             function: (node) => [node.children[0], node.children[0].text],
+            inputs: (node) => node.children[1].children,
             functions: builtinFunctions,
         }),
         features.builtinMathOperators({

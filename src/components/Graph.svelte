@@ -207,11 +207,10 @@
     $effect(() => {
         updateLayout();
 
-        const onresize = debounce(50, updateLayout);
-        window.addEventListener("resize", onresize);
+        window.addEventListener("resize", updateLayout);
 
         return () => {
-            window.removeEventListener("resize", onresize);
+            window.removeEventListener("resize", updateLayout);
         };
     });
 

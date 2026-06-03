@@ -1,12 +1,6 @@
 import { Context, Node } from "../index";
 import { List as ImmutableList } from "immutable";
-import {
-    traverseType,
-    typeReferencesNode,
-    typesAreEqual,
-    type ConstructedType,
-    type Type,
-} from "./type";
+import { traverseType, typeReferencesNode, typesAreEqual, type Type } from "./type";
 import { UnionFind } from "./union-find";
 
 export class Solver {
@@ -24,7 +18,7 @@ export class Solver {
 
         this.runTypeConstraints();
         this.runOverloadConstraints();
-        return this.toGroups(this.context.nodes);
+        return this.toGroups();
     }
 
     private temporary() {
@@ -105,7 +99,7 @@ export class Solver {
         }
     }
 
-    private toGroups(nodes: Iterable<Node>): Groups {
+    private toGroups(): Groups {
         const groups = new Map<Node, Group>();
         for (const [representative, types] of this.groups) {
             const group: Group = {
@@ -120,7 +114,7 @@ export class Solver {
             groups.set(representative, group);
         }
 
-        for (const node of [...nodes, ...this.unionFind.nodes()]) {
+        for (const node of this.unionFind.nodes()) {
             const representative = this.unionFind.find(node);
 
             if (groups.has(representative)) {

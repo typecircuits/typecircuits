@@ -43,8 +43,6 @@ export const embed =
             );
         }
 
-        context.nodes = new Set(nodes.values());
-
         for (const edge of options.edges) {
             context.edge(nodes.get(edge.from)!, nodes.get(edge.to)!, edge.label);
         }

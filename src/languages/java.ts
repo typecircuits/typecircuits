@@ -18,35 +18,35 @@ const arrayType = features.makeArrayType({
 });
 
 const builtinFunctions: features.BuiltinFunctionsOptions["functions"] = {
-    "System.out.println": {
+    "System.out.println": () => ({
         groups: [],
         overloads: [functionType([], voidType), functionType([null], voidType)],
-    },
-    "Math.random": {
+    }),
+    "Math.random": () => ({
         groups: [],
         overloads: [functionType([], doubleType)],
-    },
-    length: {
+    }),
+    length: () => ({
         groups: [],
         overloads: [intType],
-    },
+    }),
     // Use the unboxed types to simulate implicit boxing
-    String: {
+    String: () => ({
         groups: [],
         overloads: [functionType([null], stringType)],
-    },
-    Integer: {
+    }),
+    Integer: () => ({
         groups: [],
         overloads: [functionType([null], intType)],
-    },
-    Double: {
+    }),
+    Double: () => ({
         groups: [],
         overloads: [functionType([null], doubleType)],
-    },
-    Boolean: {
+    }),
+    Boolean: () => ({
         groups: [],
         overloads: [functionType([null], booleanType)],
-    },
+    }),
 };
 
 export const java = treesitterLanguage({
@@ -126,6 +126,7 @@ export const java = treesitterLanguage({
                     }
                 }
             },
+            inputs: (node) => node.children.at(-1)!.children,
             functions: builtinFunctions,
         }),
         features.builtinMathOperators({

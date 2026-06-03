@@ -132,6 +132,45 @@ Research Activities:
         - [47, 48]
         - [85, 106]
       errorMessage: "The variable 'letters' is declared but never used"
+  Kotlin:
+    - title: Arrays
+      code: |-
+        val letters = listOf("a", "b", "c")
+        val firstLetter = letters[0]
+    - title: Long word
+      code: |-
+        fun isLongWord(word: String): Boolean {
+            return word > 5
+        }
+
+        isLongWord("Kotlin")
+      errorMessage: "Argument type mismatch: actual type is 'Int', but 'String' was expected."
+      show:
+        types: false
+    - title: Square
+      code: |-
+        fun input(): String
+
+        val n = input()
+        println(n * n)
+      selections:
+        - [0, 19]
+        - [21, 36]
+        - [45, 50]
+      errorMessage: "Unresolved reference 'times' for operator '*'."
+      show:
+        functions: true
+    - title: Letters
+      code: |-
+        val letters = listOf("a", "b", "c")
+        for (i in 0..<3) {
+            println(i)
+        }
+      selections:
+        - [0, 35]
+        - [41, 42]
+        - [59, 69]
+      errorMessage: "Variable is unused."
 Starter Activities:
   JavaScript:
     - title: Addition

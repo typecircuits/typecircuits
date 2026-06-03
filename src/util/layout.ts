@@ -85,6 +85,8 @@ export const layout = async (
     for (const [group, { children }] of groupData) {
         if (children.length === 0) {
             groupData.delete(group);
+        } else {
+            children.reverse(); // for layout
         }
     }
 

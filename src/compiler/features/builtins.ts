@@ -56,7 +56,11 @@ export const builtinLiterals =
 export interface BuiltinFunctionsOptions {
     call: Selector<Node>[];
     function: (node: Node) => [Node, string] | undefined;
-    functions: Record<string, { groups: Node[][]; overloads: ConstructedType[] }>;
+    inputs: (node: Node) => Node[];
+    functions: Record<
+        string,
+        (inputs: Node[]) => { groups: Node[][]; overloads: ConstructedType[] }
+    >;
 }
 
 export const builtinFunctions =
@@ -66,7 +70,9 @@ export const builtinFunctions =
             const [functionNode, functionName] = options.function(callNode) ?? [];
 
             if (functionNode != null && functionName != null && functionName in options.functions) {
-                const { groups, overloads } = options.functions[functionName];
+                const { groups, overloads } = options.functions[functionName](
+                    options.inputs(callNode),
+                );
 
                 for (const group of groups) {
                     context.group(...group);

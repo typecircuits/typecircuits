@@ -268,6 +268,7 @@
     });
 
     let preview = $state(false);
+    let debug = $state(false);
 
     let showExamples = $state(false);
 
@@ -311,6 +312,10 @@
 
         if (query.has("preview")) {
             preview = true;
+        }
+
+        if (query.has("debug")) {
+            debug = true;
         }
 
         if (query.has("fullscreen")) {
@@ -477,16 +482,31 @@
             </div>
         {/if}
 
-        <div class={["flex-2 border-black/5", fullscreen ? "" : "rounded-lg border-[1.5px]"]}>
-            <Visualizer
-                bind:this={visualizer}
-                {compileResult}
-                {embed}
-                {preview}
-                bind:show
-                bind:selections
-                bind:selectedGroup
-            />
+        <div
+            class={[
+                "flex flex-2 flex-col border-black/5",
+                fullscreen ? "" : "rounded-lg border-[1.5px]",
+            ]}
+        >
+            {#if debug}
+                <div class="flex-1 border-b-[1.5px] border-black/5 p-4">
+                    {#if compileResult?.root != null}
+                        <pre>{compiler.debugTree(compileResult.root)}</pre>
+                    {/if}
+                </div>
+            {/if}
+
+            <div class="flex-1">
+                <Visualizer
+                    bind:this={visualizer}
+                    {compileResult}
+                    {embed}
+                    {preview}
+                    bind:show
+                    bind:selections
+                    bind:selectedGroup
+                />
+            </div>
         </div>
     </div>
 </div>

@@ -1,5 +1,5 @@
 import * as treesitter from "web-tree-sitter";
-import treeSitterWasmUrl from "web-tree-sitter/tree-sitter.wasm?url";
+import treeSitterWasmUrl from "web-tree-sitter/web-tree-sitter.wasm?url";
 import { isConstructedType, type ConstructedType, type Type } from "./solver/type";
 import { Solver, type Group } from "./solver/solve";
 import type { Show } from "@/App.svelte";
@@ -63,6 +63,18 @@ const convertNode = (input: treesitter.Node | null | undefined): Node | undefine
     return node;
 };
 
+export const debugTree = (node: Node, indent = 0) => {
+    let s = "  ".repeat(indent);
+
+    s += `(${node.type}) ${node.text}`;
+
+    for (const child of node.children) {
+        s += "\n" + debugTree(child, indent + 1);
+    }
+
+    return s;
+};
+
 export interface Edge {
     from: Node;
     to: Node;
@@ -102,7 +114,6 @@ export const event =
 export type Feature = (context: Context) => void;
 
 export class Context {
-    nodes = new Set<Node>();
     edges: Edge[] = [];
     replacements: Replacement[] = [];
     groups: Node[][] = [];
@@ -113,9 +124,7 @@ export class Context {
     constructor(
         public root: Node | undefined,
         public show: Show,
-    ) {
-        this.select([], () => {}); // populate `nodes`
-    }
+    ) {}
 
     edge(from: Node, to: Node, label: string) {
         this.edges.push({ from, to, label });
@@ -172,8 +181,6 @@ export class Context {
         const visit = (node: Node | undefined) => {
             if (node == null) return;
 
-            this.nodes.add(node);
-
             for (const selector of selectors) {
                 selector(node, callback);
             }
@@ -205,7 +212,11 @@ const compile = (root: Node | undefined, features: Feature[], show: Show) => {
     const context = new Context(root, show);
 
     for (const feature of features) {
-        feature(context);
+        try {
+            feature(context);
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     const replace = (node: Node | undefined) => {
@@ -237,9 +248,10 @@ const compile = (root: Node | undefined, features: Feature[], show: Show) => {
     }
 
     const result = {
+        root,
         nodes: new Set(
-            context.nodes
-                .values()
+            groups
+                .nodes()
                 .map(replace)
                 .filter((node) => node != null),
         ),
