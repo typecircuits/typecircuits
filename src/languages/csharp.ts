@@ -76,7 +76,11 @@ export const csharp = treesitterLanguage({
                 ),
                 node("local_function_statement", (node) => [{ definition: node.children[1] }]),
             ],
-            scopes: [node("local_function_statement"), node("for_statement")],
+            scopes: [
+                node("local_function_statement"),
+                node("method_declaration"),
+                node("for_statement"),
+            ],
             names: [node("identifier")],
             ignore: Object.keys(builtinFunctions),
         }),
@@ -150,6 +154,12 @@ export const csharp = treesitterLanguage({
         features.functions({
             function: [
                 node("local_function_statement", (node) => ({
+                    function: node,
+                    definition: node.children[1],
+                    inputs: node.children[2].children,
+                    output: node.children[0],
+                })),
+                node("method_declaration", (node) => ({
                     function: node,
                     definition: node.children[1],
                     inputs: node.children[2].children,
