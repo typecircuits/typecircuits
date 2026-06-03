@@ -22,13 +22,14 @@
     import { debounce } from "@/util/debounce";
     import type * as compiler from "@/compiler";
     import { displayType } from "@/compiler/solver/type";
+    import type { Show } from "@/App.svelte";
 
     interface Props {
         context: ReturnType<typeof useSvelteFlow>;
         preview?: boolean;
         selectedGroup: compiler.Group | undefined;
         filter: (node: compiler.Node) => boolean;
-        options: Record<string, any>;
+        show: Show;
         compileResult: compiler.CompileResult;
     }
 
@@ -37,7 +38,7 @@
         preview,
         selectedGroup = $bindable(),
         filter,
-        options,
+        show,
         compileResult,
     }: Props = $props();
 
@@ -89,7 +90,7 @@
                             nodes: children.map(({ node }) => node),
                             labels: group.types.map((type) => displayType(type)),
                             conflict: group.conflict,
-                            options,
+                            show,
                             onmouseenter: () => {
                                 selectedGroup = group;
                             },
@@ -112,7 +113,7 @@
                         type: "Node",
                         data: {
                             node,
-                            options,
+                            show,
                             setActive: (active: boolean) => {
                                 if (active) {
                                     const nodes = new Set<compiler.Node>([node]);
@@ -185,7 +186,7 @@
                                 target,
                                 sections: coordinates.sections,
                                 color: groupColor(targetGroup),
-                                options,
+                                show,
                             },
                         },
                     ];

@@ -36,6 +36,8 @@ export const fields =
                 context.edge(object, access, "object");
             }
 
+            context.edge(field, access, "property");
+
             context.transparent(field);
             context.group(field, access);
         });
@@ -65,7 +67,7 @@ export const functions =
                 if (output != null) {
                     context.edge(output, functionNode, "return type");
 
-                    if (!context.options.showTypes) {
+                    if (!context.show.types) {
                         context.transparent(output);
                     }
                 }

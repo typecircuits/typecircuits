@@ -2,7 +2,8 @@
     import { SvelteFlowProvider, useSvelteFlow } from "@xyflow/svelte";
     import Graph from "@/components/Graph.svelte";
     import type * as compiler from "@/compiler";
-    import { selectionFilter, type Options } from "@/App.svelte";
+    import { selectionFilter, type Show } from "@/App.svelte";
+    import ShowToggles from "./ShowToggles.svelte";
 
     interface Props {
         preview?: boolean;
@@ -10,7 +11,7 @@
         selections: [number, number][];
         compileResult: compiler.CompileResult | undefined;
         selectedGroup?: compiler.Group;
-        options: Options;
+        show: Show;
     }
 
     let {
@@ -19,10 +20,8 @@
         compileResult,
         selections = $bindable(),
         selectedGroup = $bindable(),
-        options,
+        show = $bindable(),
     }: Props = $props();
-
-    const metaKey = navigator.platform.startsWith("Mac") ? "⌘" : "Ctrl";
 
     const keyStyles = {
         Expressions: {
@@ -39,15 +38,10 @@
         },
     };
 
-    const { status, keyItems } = $derived.by(() => {
+    const keyItems = $derived.by(() => {
         if (compileResult == null) {
-            return { status: undefined, keyItems: [] };
+            return [];
         }
-
-        const status =
-            selections.length > 0
-                ? `Filtering by selection (hold ${metaKey} to select multiple)`
-                : "Showing all (select code to filter)";
 
         const newKeyItems = new Set<string>();
         for (const group of compileResult.groups) {
@@ -68,7 +62,7 @@
             }
         }
 
-        return { status, keyItems };
+        return keyItems;
     });
 
     let svelteFlowContext = $state<ReturnType<typeof useSvelteFlow>>();
@@ -86,24 +80,16 @@
                     bind:selectedGroup
                     filter={selectionFilter(selections)}
                     {compileResult}
-                    {options}
+                    {show}
                 />
             </SvelteFlowProvider>
         </div>
     {/if}
 
     {#if !preview}
-        {#if status}
-            <p
-                class="absolute top-[10px] left-[10px] z-10 rounded-full border-[1.5px] border-black/5 bg-white px-[8px] py-[2px] text-sm"
-            >
-                {status}
-            </p>
-        {/if}
-
         {#if keyItems.length > 0}
             <div
-                class="absolute top-[10px] right-[10px] z-10 flex flex-col gap-[4px] rounded-[10px] border-[1.5px] border-black/5 bg-white p-[8px] text-sm"
+                class="absolute top-[10px] left-[10px] z-10 flex flex-col gap-[4px] rounded-[10px] border-[1.5px] border-black/5 bg-white p-[8px] text-sm"
             >
                 {#each keyItems as item}
                     {@const { color, class: className } = keyStyles[item as keyof typeof keyStyles]}
@@ -124,6 +110,12 @@
                 {/each}
             </div>
         {/if}
+
+        <div
+            class="absolute top-[10px] right-[10px] z-10 flex flex-col gap-[4px] rounded-[10px] border-[1.5px] border-black/5 bg-white p-[8px] text-sm"
+        >
+            <ShowToggles bind:show />
+        </div>
 
         {#if embed}
             <a

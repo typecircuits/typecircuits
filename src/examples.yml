@@ -26,8 +26,8 @@ Research Activities:
         - [25, 36]
         - [43, 48]
       errorMessage: "can't multiply sequence by non-int of type 'str'"
-      options:
-        showFunctions: true
+      show:
+        functions: true
     - title: Letters
       code: |-
         letters = ["a", "b", "c"]
@@ -43,8 +43,8 @@ Research Activities:
       code: |-
         String[] letters = { "a", "b", "c" };
         String firstLetter = letters[0];
-      options:
-        showTypes: false
+      show:
+        types: false
     - title: Long word
       code: |-
         boolean isLongWord(String word) {
@@ -66,8 +66,8 @@ Research Activities:
         Scanner scanner = new Scanner(System.in);
         int n = scanner.next();
         System.out.println(n * n);
-      options:
-        showFunctions: true
+      show:
+        functions: true
       selections:
         - [20, 34]
         - [80, 103]
@@ -89,8 +89,8 @@ Research Activities:
       code: |-
         string[] letters = { "a", "b", "c" };
         string firstLetter = letters[0];
-      options:
-        showTypes: false
+      show:
+        types: false
     - title: Long word
       code: |-
         bool isLongWord(string word)
@@ -110,8 +110,8 @@ Research Activities:
 
         int n = Console.ReadLine();
         Console.WriteLine(n * n);
-      options:
-        showFunctions: true
+      show:
+        functions: true
       selections:
         - [0, 18]
         - [20, 47]

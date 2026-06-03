@@ -11,10 +11,10 @@
             activeNodes.current.some((node) => data.nodes.includes(node)),
     );
 
-    const showGroups = $derived(data.options.showGroups);
+    const groups = $derived(data.show.groups);
 </script>
 
-{#if showGroups}
+{#if groups}
     <div style:opacity={isActive ? 1 : 0.3} class="transition-opacity duration-75">
         <code
             class="flex h-[24px] flex-row items-center gap-[1ch] px-[4px] text-center text-[90%] font-medium"

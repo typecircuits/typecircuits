@@ -1,12 +1,12 @@
 <script module lang="ts">
     const imageSize = 1500;
 
-    export type Options = typeof defaultOptions;
+    export type Show = typeof defaultShow;
 
-    export const defaultOptions = {
-        showGroups: true,
-        showTypes: true,
-        showFunctions: false,
+    export const defaultShow = {
+        groups: true,
+        types: true,
+        functions: false,
     };
 
     export const selectionFilter = (selections: [number, number][]) => (node: compiler.Node) =>
@@ -34,7 +34,6 @@
     import { debounce } from "./util/debounce";
     import type { Example } from "./examples";
     import Modal from "./components/Modal.svelte";
-    import OptionsSelector from "./components/Options.svelte";
     import * as analytics from "./analytics";
     import LanguageDropdown from "./components/LanguageDropdown.svelte";
     import { getViewportForBounds } from "@xyflow/svelte";
@@ -77,7 +76,7 @@
     let code = $state("");
     let selections = $state<[number, number][]>([]);
     let errorMessage = $state("");
-    let options = $state(defaultOptions);
+    let show = $state(defaultShow);
     let selectedGroup = $state<compiler.Group>();
     let embed = $state(false);
 
@@ -87,9 +86,9 @@
 
     $effect(() => {
         code;
-        $state.snapshot(options); // react to each option
+        $state.snapshot(show); // react to each option
         resolvedLanguage?.then((language) => {
-            compileResult = language.compile(code, options);
+            compileResult = language.compile(code, show);
         });
     });
 
@@ -275,7 +274,7 @@
         selections = example.selections ?? [];
         errorMessage = example.errorMessage ?? "";
         showExamples = false;
-        options = { ...defaultOptions, ...example.options };
+        show = { ...defaultShow, ...example.show };
 
         analytics.sendEvent(participantId, { type: "example", example: example.title });
     };
@@ -284,23 +283,22 @@
         showExamples = false;
     };
 
-    let showOptions = $state(false);
-
-    const oncloseoptions = () => {
-        showOptions = false;
-    };
-
     onMount(() => {
         const query = new URLSearchParams(window.location.search);
 
         if (query.has("embed")) {
             embed = true;
             fullscreen = true;
-            options.showFunctions = query.has("showFunctions");
 
+            let setShow = false;
             window.addEventListener("message", (event) => {
                 if (typeof event.data === "object" && "embed" in event.data) {
                     language = embeddedLanguage("embed", event.data.embed);
+
+                    if (!setShow) {
+                        Object.assign(show, event.data.show);
+                        setShow = true;
+                    }
                 }
             });
 
@@ -375,10 +373,6 @@
                 {#if language != null}
                     <LanguageDropdown bind:selection={language} />
                 {/if}
-
-                <Button onclick={() => (showOptions = true)}>
-                    <Icon>more_horiz</Icon>
-                </Button>
             </div>
         {/if}
 
@@ -482,7 +476,7 @@
                 bind:this={visualizer}
                 {compileResult}
                 {embed}
-                {options}
+                bind:show
                 bind:selections
                 bind:selectedGroup
             />
@@ -508,11 +502,5 @@
             onclick={onclickexample}
             onclose={oncloseexamples}
         />
-    </Modal>
-{/if}
-
-{#if showOptions}
-    <Modal width="400px" height="auto" onclose={oncloseoptions}>
-        <OptionsSelector bind:options onclose={oncloseoptions} />
     </Modal>
 {/if}

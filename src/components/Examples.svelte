@@ -3,7 +3,7 @@
     import Icon from "./Icon.svelte";
     import Visualizer from "./Visualizer.svelte";
     import LanguageDropdown from "./LanguageDropdown.svelte";
-    import { defaultOptions } from "@/App.svelte";
+    import { defaultShow } from "@/App.svelte";
     import type * as compiler from "@/compiler";
 
     interface Props {
@@ -37,7 +37,7 @@
                 <h2 class="col-span-3 mt-[20px] text-xl font-semibold">{title}</h2>
 
                 {#each section[language.name] as example}
-                    {@const options = { ...defaultOptions, ...example.options }}
+                    {@const show = { ...defaultShow, ...example.show }}
 
                     <button
                         onclick={() => onclick(example)}
@@ -58,12 +58,9 @@
                                 {#if resolvedLanguage != null}
                                     <Visualizer
                                         preview
-                                        {options}
+                                        {show}
                                         selections={example.selections ?? []}
-                                        compileResult={resolvedLanguage.compile(
-                                            example.code,
-                                            options,
-                                        )}
+                                        compileResult={resolvedLanguage.compile(example.code, show)}
                                     />
                                 {/if}
                             {/await}

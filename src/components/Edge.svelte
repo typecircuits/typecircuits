@@ -19,7 +19,7 @@
     const path = $derived(pathFromPoints(points));
 
     const { label } = props.label as any as compiler.Edge;
-    const { color, target, options } = props.data as any;
+    const { color, target, show } = props.data as any;
 
     const isActive = $derived(
         activeNodes.current.length === 0 || activeNodes.current.includes(target),
@@ -27,9 +27,9 @@
 
     const opacity = $derived(isActive ? 1 : 0.05);
 
-    const showGroups = $derived(options.showGroups);
+    const groups = $derived(show.groups);
 
-    const strokeColor = $derived(showGroups ? color : "gray");
+    const strokeColor = $derived(groups ? color : "gray");
 </script>
 
 <BaseEdge
@@ -39,14 +39,16 @@
     style="stroke-width: 2px; stroke: color-mix(in srgb, {strokeColor} 80%, white); opacity: {opacity};"
 />
 
-<EdgeLabel x={labelX} y={labelY} style="background: none;">
-    <div
-        role="tooltip"
-        class={[
-            "rounded-[12px] border-1 border-gray-200 bg-white px-[4px] py-[1px] text-[smaller] transition-opacity duration-75",
-            isActive ? "opacity-100" : "opacity-0",
-        ]}
-    >
-        {label}
-    </div>
-</EdgeLabel>
+{#if label}
+    <EdgeLabel x={labelX} y={labelY} style="background: none;">
+        <div
+            role="tooltip"
+            class={[
+                "rounded-[12px] border-1 border-gray-200 bg-white px-[4px] py-[1px] text-[smaller] transition-opacity duration-75",
+                isActive ? "opacity-100" : "opacity-0",
+            ]}
+        >
+            {label}
+        </div>
+    </EdgeLabel>
+{/if}

@@ -2,7 +2,7 @@ import * as treesitter from "web-tree-sitter";
 import treeSitterWasmUrl from "web-tree-sitter/tree-sitter.wasm?url";
 import { isConstructedType, type ConstructedType, type Type } from "./solver/type";
 import { Solver, type Group } from "./solver/solve";
-import type { Options } from "@/App.svelte";
+import type { Show } from "@/App.svelte";
 
 await treesitter.Parser.init({ locateFile: () => treeSitterWasmUrl });
 
@@ -112,7 +112,7 @@ export class Context {
 
     constructor(
         public root: Node | undefined,
-        public options: Options,
+        public show: Show,
     ) {
         this.select([], () => {}); // populate `nodes`
     }
@@ -201,8 +201,8 @@ export class Context {
     }
 }
 
-const compile = (root: Node | undefined, features: Feature[], options: Options) => {
-    const context = new Context(root, options);
+const compile = (root: Node | undefined, features: Feature[], show: Show) => {
+    const context = new Context(root, show);
 
     for (const feature of features) {
         feature(context);
@@ -222,7 +222,7 @@ const compile = (root: Node | undefined, features: Feature[], options: Options) 
 
     const groups = solver.run();
 
-    if (!options.showFunctions) {
+    if (!show.functions) {
         for (const group of groups.groups.values()) {
             const hasFunctionType = group.types.some(
                 (type) => isConstructedType(type) && type.tag === "function",
@@ -284,7 +284,7 @@ export type Language = {
 };
 
 export interface ResolvedLanguage {
-    compile: (input: string, options: Options) => CompileResult | undefined;
+    compile: (input: string, show: Show) => CompileResult | undefined;
 }
 
 export const treesitterLanguage = (language: {
@@ -304,7 +304,7 @@ export const treesitterLanguage = (language: {
             }
 
             return {
-                compile: (source, options) => {
+                compile: (source, show) => {
                     if (parser == null) {
                         return;
                     }
@@ -314,7 +314,7 @@ export const treesitterLanguage = (language: {
                         return undefined;
                     }
 
-                    return compile(convertNode(root), language.features, options);
+                    return compile(convertNode(root), language.features, show);
                 },
             };
         },
@@ -325,6 +325,6 @@ export const customLanguage = (language: { name: string; features: Feature[] }):
     name: language.name,
     editorExtensions: [],
     init: async () => ({
-        compile: (_source, options) => compile(undefined, language.features, options),
+        compile: (_source, show) => compile(undefined, language.features, show),
     }),
 });

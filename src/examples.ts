@@ -5,7 +5,7 @@ export interface Example {
     code: string;
     selections?: [number, number][];
     errorMessage?: string;
-    options?: Record<string, boolean>;
+    show?: Record<string, boolean>;
 }
 
 export const examples = examplesYaml as Record<string, Record<string, Example[]>>;

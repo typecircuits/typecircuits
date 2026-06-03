@@ -38,7 +38,7 @@ export const typeAnnotations =
                         context.type(annotatedType, resolvedType);
                     }
 
-                    if (!context.options.showTypes) {
+                    if (!context.show.types) {
                         context.transparent(annotatedType);
                     }
                 }
@@ -59,7 +59,7 @@ export const typeAnnotations =
 
             context.type(node, type);
 
-            if (!context.options.showTypes) {
+            if (!context.show.types) {
                 context.transparent(node);
             }
         });
