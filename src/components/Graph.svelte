@@ -19,7 +19,6 @@
     import Edge from "./Edge.svelte";
     import { groupLabelHeight, layout } from "@/util/layout";
     import Icon from "./Icon.svelte";
-    import { debounce } from "@/util/debounce";
     import type * as compiler from "@/compiler";
     import { displayType } from "@/compiler/solver/type";
     import type { Show } from "@/App.svelte";
@@ -248,7 +247,7 @@
             }
         }}
         minZoom={0.25}
-        maxZoom={5}
+        maxZoom={2}
         fitView
         proOptions={{ hideAttribution: true }}
     >
