@@ -373,14 +373,6 @@
     <div class="flex flex-row items-center justify-between gap-[10px]">
         {#if !fullscreen}
             <div class="flex flex-row items-center gap-[10px] font-semibold">
-                <a href="https://typecircuits.org" target="_blank">
-                    <img
-                        src="https://typecircuits.org/logo.png"
-                        alt="Type Circuits"
-                        class="size-[32px]"
-                    />
-                </a>
-
                 {#if language != null}
                     <LanguageDropdown bind:selection={language} />
                 {/if}
@@ -500,7 +492,6 @@
                 <Visualizer
                     bind:this={visualizer}
                     {compileResult}
-                    {embed}
                     {preview}
                     bind:show
                     bind:selections

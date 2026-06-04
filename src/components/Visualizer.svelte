@@ -7,7 +7,6 @@
 
     interface Props {
         preview?: boolean;
-        embed?: boolean;
         selections: [number, number][];
         compileResult: compiler.CompileResult | undefined;
         selectedGroup?: compiler.Group;
@@ -16,7 +15,6 @@
 
     let {
         preview,
-        embed,
         compileResult,
         selections = $bindable(),
         selectedGroup = $bindable(),
@@ -89,7 +87,7 @@
     {#if !preview}
         {#if keyItems.length > 0}
             <div
-                class="absolute top-[10px] left-[10px] z-10 flex flex-col gap-[4px] rounded-[10px] border-[1.5px] border-black/5 bg-white p-[8px] text-sm"
+                class="absolute top-[10px] left-[10px] z-10 flex flex-col gap-[4px] rounded-[10px] border-[1.5px] border-black/5 bg-white p-[8px] text-sm shadow-lg shadow-black/2.5"
             >
                 {#each keyItems as item}
                     {@const { color, class: className } = keyStyles[item as keyof typeof keyStyles]}
@@ -112,25 +110,19 @@
         {/if}
 
         <div
-            class="absolute top-[10px] right-[10px] z-10 flex flex-col gap-[4px] rounded-[10px] border-[1.5px] border-black/5 bg-white p-[8px] text-sm"
+            class="absolute top-[10px] right-[10px] z-10 flex flex-col gap-[4px] rounded-[10px] border-[1.5px] border-black/5 bg-white p-[8px] text-sm shadow-lg shadow-black/2.5"
         >
             <ShowToggles bind:show />
         </div>
 
-        {#if embed}
-            <a
-                href="https://typecircuits.org"
-                target="_blank"
-                class="absolute right-[10px] bottom-[10px] z-10 flex flex-row items-center justify-center gap-[6px] rounded-lg border-[1.5px] border-black/5 bg-white px-[6px] py-[4px] text-xs hover:bg-gray-100"
-            >
-                <img
-                    src="https://typecircuits.org/logo.png"
-                    alt="Type Circuits"
-                    class="size-[20px]"
-                />
+        <a
+            href="https://typecircuits.org"
+            target="_blank"
+            class="absolute right-[10px] bottom-[10px] z-10 flex flex-row items-center justify-center gap-[6px] rounded-lg border-[1.5px] border-black/5 bg-white px-[8px] py-[6px] text-sm shadow-lg shadow-black/2.5 hover:bg-gray-100"
+        >
+            <img src="https://typecircuits.org/logo.png" alt="Type Circuits" class="size-[20px]" />
 
-                <p class="font-medium">Type Circuits</p>
-            </a>
-        {/if}
+            <p class="font-medium">Type Circuits</p>
+        </a>
     {/if}
 </div>

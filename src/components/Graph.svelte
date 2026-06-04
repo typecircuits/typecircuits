@@ -253,10 +253,14 @@
         proOptions={{ hideAttribution: true }}
     >
         {#if !preview}
-            <Controls showLock={false} orientation="horizontal">
-                <ControlButton onclick={toggleDirection}>
+            <Controls
+                showLock={false}
+                orientation="horizontal"
+                class="*:ring-r-[1.5px]! *:ring-r-black/5! m-[10px]! overflow-clip rounded-lg border-[1.5px] border-black/5 bg-white shadow-lg! shadow-black/2.5! *:size-[32px]!"
+            >
+                <ControlButton onclick={toggleDirection} class="">
                     <div
-                        class="flex items-center justify-center text-xs"
+                        class="flex items-center justify-center text-sm"
                         style:transform={direction === "DOWN" ? "rotate(90deg)" : ""}
                     >
                         <Icon>sync_alt</Icon>
