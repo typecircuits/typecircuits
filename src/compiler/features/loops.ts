@@ -3,7 +3,6 @@ import { Node, type ConstructedType, type Feature, type Selector, type Type } fr
 export interface ForEachLoopsOptions {
     forEachLoop: Selector<{ array: Node; element: Node; loop: Node }>[];
     arrayType: (element: Type) => ConstructedType;
-    voidType: ConstructedType;
 }
 
 export const forEachLoops =
@@ -13,6 +12,5 @@ export const forEachLoops =
             context.edge(array, loop, "array");
             context.edge(array, element, "element");
             context.type(array, options.arrayType(element));
-            context.type(loop, options.voidType);
         });
     };

@@ -4,6 +4,7 @@ export interface Example {
     title: string;
     code: string;
     selections?: [number, number][];
+    hiddenNodes?: string[];
     errorMessage?: string;
     show?: Record<string, boolean>;
 }

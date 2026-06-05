@@ -60,6 +60,7 @@
                                         preview
                                         {show}
                                         selections={example.selections ?? []}
+                                        hiddenNodes={example.hiddenNodes ?? []}
                                         compileResult={resolvedLanguage.compile(example.code, show)}
                                     />
                                 {/if}

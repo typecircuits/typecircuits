@@ -45,26 +45,6 @@ export const javascript = treesitterLanguage({
     editorExtensions: [javascriptExtension()],
     treesitterUrl: treesitterJavascriptUrl,
     features: [
-        features.hideDefault(),
-        features.hide({
-            transparent: [
-                node("program"),
-                node("expression_statement"),
-                node("return_statement"),
-                node("for_statement"),
-                node("for_in_statement"),
-                node("while_statement"),
-                node("lexical_declaration"),
-                node("variable_declarator"),
-                node("assignment_expression"),
-                node("formal_parameters"),
-                node("arguments"),
-                node("statement_block"),
-                node("else_clause"),
-                node("parenthesized_expression"),
-            ],
-            atomic: [node("string"), node("member_expression")],
-        }),
         features.nameResolution({
             definitions: [
                 node("variable_declarator", (node) => [
@@ -230,7 +210,6 @@ export const javascript = treesitterLanguage({
                 })),
             ],
             arrayType: listType,
-            voidType,
         }),
         features.updates({
             update: [

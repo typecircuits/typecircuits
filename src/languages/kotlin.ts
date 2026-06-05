@@ -38,26 +38,6 @@ export const kotlin = treesitterLanguage({
     editorExtensions: [StreamLanguage.define(kotlinExtension)],
     treesitterUrl: treesitterKotlinUrl,
     features: [
-        features.hideDefault(),
-        features.hide({
-            transparent: [
-                node("source_file"),
-                node("property_declaration"),
-                node("variable_declaration"),
-                node("expression_statement"),
-                node("return_expression"),
-                node("for_statement"),
-                node("while_statement"),
-                node("assignment"),
-                node("function_value_parameters"),
-                node("value_arguments"),
-                node("value_argument"),
-                node("function_body"),
-                node("parenthesized_expression"),
-                node("block"),
-            ],
-            atomic: [node("string_literal"), node("user_type"), node("range_expression")],
-        }),
         features.nameResolution({
             definitions: [
                 node("property_declaration", (node) => [
@@ -244,7 +224,6 @@ export const kotlin = treesitterLanguage({
                 })),
             ],
             arrayType: listType,
-            voidType: unitType,
         }),
     ],
 });

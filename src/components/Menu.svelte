@@ -7,12 +7,13 @@
     interface Props extends HTMLAttributes<HTMLElement> {
         children: Snippet;
         items: Snippet;
+        event?: "click" | "contextmenu";
     }
 
     const duration = 150;
     const topOffset = 4;
 
-    const { children, items, ...props }: Props = $props();
+    const { children, items, event = "click", ...props }: Props = $props();
 
     const portal: Action = (node) => {
         $effect(() => {
@@ -29,8 +30,10 @@
     let wrapperVisible = $state(false);
     let contentVisible = $state(false);
 
-    const onclick: MouseEventHandler<HTMLElement> = (e) => {
-        const reference = e.currentTarget;
+    const handle = (e: PointerEvent) => {
+        e.preventDefault();
+
+        const reference = e.currentTarget as HTMLElement;
 
         if (wrapperVisible) {
             dismiss();
@@ -52,6 +55,14 @@
         });
     };
 
+    $effect(() => {
+        element.addEventListener(event, handle);
+
+        return () => {
+            element.removeEventListener(event, handle);
+        };
+    });
+
     const dismiss = () => {
         contentVisible = false;
 
@@ -67,10 +78,10 @@
     };
 </script>
 
-<svelte:window onclick={onClickOutside} />
+<svelte:window onclick={onClickOutside} oncontextmenu={onClickOutside} />
 
 <!-- Don't add whitespace between the snippet and the menu div -->
-<span bind:this={element} {onclick} {...props}>
+<span bind:this={element} {...props}>
     {@render children()}{#if wrapperVisible}
         <div bind:this={wrapper} use:portal class="fixed z-100" role="menu">
             {#if contentVisible}

@@ -33,30 +33,6 @@ export const csharp = treesitterLanguage({
     editorExtensions: [csharpExtension()],
     treesitterUrl: treesitterCsharpExtension,
     features: [
-        features.hideDefault(),
-        features.hide({
-            transparent: [
-                node("compilation_unit"),
-                node("local_declaration_statement"),
-                node("variable_declaration"),
-                node("variable_declarator"),
-                node("global_statement"),
-                node("expression_statement"),
-                node("return_statement"),
-                node("for_statement"),
-                node("foreach_statement"),
-                node("while_statement"),
-                node("pointer_type"),
-                node("assignment_expression"),
-                node("parameter_list"),
-                node("argument_list"),
-                node("argument"),
-                node("bracketed_argument_list"),
-                node("block"),
-                node("parenthesized_expression"),
-            ],
-            atomic: [node("string_literal")],
-        }),
         features.nameResolution({
             definitions: [
                 node("variable_declaration", (node) => [
@@ -271,7 +247,6 @@ export const csharp = treesitterLanguage({
                 })),
             ],
             arrayType: arrayType,
-            voidType: voidType,
         }),
         features.updates({
             update: [

@@ -45,21 +45,13 @@ export const layout = async (
         return fontWidth;
     })();
 
-    const nodeIds = new Map<compiler.Node, string>();
-    for (const node of compileResult.nodes) {
-        if (!filter(node)) {
-            continue;
-        }
-
-        const id = node.id ?? `node${nodeIds.size}`;
-        nodeIds.set(node, id);
-    }
+    const nodes = new Set(compileResult.nodes.values().filter(filter));
 
     const groupData = new Map<compiler.Group, GroupData>();
     for (const group of compileResult.groups) {
-        const nodes = group.nodes.values().filter(filter).toArray();
+        const groupNodes = group.nodes.values().filter(filter).toArray();
 
-        if (nodes.length === 0) continue;
+        if (groupNodes.length === 0) continue;
 
         const data: GroupData = {
             id: `group${groupData.size}`,
@@ -69,12 +61,11 @@ export const layout = async (
 
         groupData.set(group, data);
 
-        for (const node of nodes) {
-            const id = nodeIds.get(node);
-            if (id == null) continue;
+        for (const node of groupNodes) {
+            if (!nodes.has(node)) continue;
 
             data.children.push({
-                id,
+                id: node.id,
                 node,
                 width: fontWidth * node.toString().length + nodePaddingX * 2,
                 height: nodeLabelFontSize + nodePaddingY * 2,
@@ -120,17 +111,14 @@ export const layout = async (
 
     const edgeIds: Set<string> = new Set();
     let edgeData = compileResult.edges.flatMap(({ from: source, to: target }) => {
-        const sourceId = nodeIds.get(source);
-        const targetId = nodeIds.get(target);
         const sourceGroup = compileResult.groups.find((group) => group.nodes.has(source));
-
-        if (sourceId == null || targetId == null || sourceGroup == null) {
+        if (!nodes.has(source) || !nodes.has(target) || sourceGroup == null) {
             return [];
         }
 
         const sourceGroupId = groupData.get(sourceGroup)!.id;
 
-        const id = `edge${sourceId}-${targetId}`;
+        const id = `edge${source.id}-${target.id}`;
 
         if (edgeIds.has(id)) {
             return [];
@@ -138,14 +126,17 @@ export const layout = async (
 
         edgeIds.add(id);
 
-        return [{ id, sources: [sourceId], targets: [`port_${targetId}_${sourceGroupId}`] }];
+        return [{ id, sources: [source.id], targets: [`port_${target.id}_${sourceGroupId}`] }];
     });
 
     // Remove nodes that are not part of any group
-    for (const [node, id] of nodeIds) {
-        if (!groupData.values().some((g) => g.children.some((c) => c.id === id))) {
-            nodeIds.delete(node);
-            edgeData = edgeData.filter((edge) => edge.sources[0] !== id && edge.targets[0] !== id);
+    for (const node of nodes) {
+        if (!groupData.values().some((g) => g.children.some((c) => c.id === node.id))) {
+            nodes.delete(node);
+
+            edgeData = edgeData.filter(
+                (edge) => edge.sources[0] !== node.id && edge.targets[0] !== node.id,
+            );
         }
     }
 
@@ -196,9 +187,8 @@ export const layout = async (
     const edgeCoordinates = (source: compiler.Node, target: compiler.Node) =>
         layouted.edges!.find(
             (edge) =>
-                edge.sources![0] === nodeIds.get(source)! &&
-                edge.targets![0].startsWith(`port_${nodeIds.get(target)!}`),
+                edge.sources![0] === source.id && edge.targets![0].startsWith(`port_${target.id}`),
         ) as ElkExtendedEdge | undefined;
 
-    return { nodeIds, clusters, edgeCoordinates };
+    return { nodes, clusters, edgeCoordinates };
 };

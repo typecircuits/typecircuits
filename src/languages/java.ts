@@ -54,25 +54,6 @@ export const java = treesitterLanguage({
     editorExtensions: [javaExtension()],
     treesitterUrl: treesitterJavaUrl,
     features: [
-        features.hideDefault(),
-        features.hide({
-            transparent: [
-                node("program"),
-                node("local_variable_declaration"),
-                node("variable_declarator"),
-                node("expression_statement"),
-                node("return_statement"),
-                node("for_statement"),
-                node("enhanced_for_statement"),
-                node("while_statement"),
-                node("assignment_expression"),
-                node("formal_parameters"),
-                node("argument_list"),
-                node("block"),
-                node("parenthesized_expression"),
-            ],
-            atomic: [node("string_literal")],
-        }),
         features.nameResolution({
             definitions: [
                 node("variable_declarator", (node) => [
@@ -287,7 +268,6 @@ export const java = treesitterLanguage({
                 })),
             ],
             arrayType: arrayType,
-            voidType: voidType,
         }),
         features.updates({
             update: [

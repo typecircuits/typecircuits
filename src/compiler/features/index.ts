@@ -3,7 +3,6 @@ export * from "./builtins";
 export * from "./control-flow";
 export * from "./embed";
 export * from "./functions";
-export * from "./hide";
 export * from "./loops";
 export * from "./name-resolution";
 export * from "./type-annotations";

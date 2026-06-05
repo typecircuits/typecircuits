@@ -8,6 +8,7 @@
     interface Props {
         preview?: boolean;
         selections: [number, number][];
+        hiddenNodes: string[];
         compileResult: compiler.CompileResult | undefined;
         selectedGroup?: compiler.Group;
         show: Show;
@@ -17,6 +18,7 @@
         preview,
         compileResult,
         selections = $bindable(),
+        hiddenNodes = $bindable(),
         selectedGroup = $bindable(),
         show = $bindable(),
     }: Props = $props();
@@ -76,9 +78,10 @@
                     bind:context={svelteFlowContext!}
                     {preview}
                     bind:selectedGroup
-                    filter={selectionFilter(selections)}
+                    filter={selectionFilter(selections, hiddenNodes)}
                     {compileResult}
                     {show}
+                    onhidenode={(node) => hiddenNodes.push(node.id)}
                 />
             </SvelteFlowProvider>
         </div>

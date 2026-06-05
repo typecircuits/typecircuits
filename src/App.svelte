@@ -9,15 +9,28 @@
         functions: false,
     };
 
-    export const selectionFilter = (selections: [number, number][]) => (node: compiler.Node) =>
-        selections.length === 0 ||
-        selections.some(
-            ([from, to]) =>
-                node.startIndex != null &&
-                node.startIndex >= from &&
-                node.endIndex != null &&
-                node.endIndex <= to,
-        );
+    export const selectionFilter =
+        (selections: [number, number][], hiddenNodes: string[]) => (node: compiler.Node) =>
+            !hiddenNodes.includes(node.id) &&
+            (selections.length === 0 ||
+                selections.some(
+                    ([from, to]) =>
+                        node.startIndex != null &&
+                        node.startIndex >= from &&
+                        node.endIndex != null &&
+                        node.endIndex <= to,
+                ));
+
+    const stringifySelections = (selections: [number, number][]) =>
+        selections.map(([start, end]) => `${start}-${end}`).join(",");
+
+    const parseSelections = (string: string): [number, number][] => {
+        if (string.length === 0) {
+            return [];
+        }
+
+        return string.split(",").map((part) => part.split("-").map(parseFloat) as [number, number]);
+    };
 </script>
 
 <script lang="ts">
@@ -34,65 +47,117 @@
     import { debounce } from "./util/debounce";
     import type { Example } from "./examples";
     import Modal from "./components/Modal.svelte";
-    import * as analytics from "./analytics";
     import LanguageDropdown from "./components/LanguageDropdown.svelte";
     import { getViewportForBounds } from "@xyflow/svelte";
     import Menu from "./components/Menu.svelte";
     import MenuButton from "./components/MenuButton.svelte";
 
-    let participantId = $state(localStorage.getItem("participantId"));
+    const query = $state(
+        (() => {
+            const result = {
+                embed: false,
+                fullscreen: false,
+                preview: false,
+                debug: false,
+                language: undefined as compiler.Language | undefined,
+                code: "",
+                errorMessage: "",
+                selections: [] as [number, number][],
+                hiddenNodes: [] as string[],
+                show: defaultShow,
+            };
 
-    $effect(() => {
-        if (participantId != null) {
-            localStorage.setItem("participantId", participantId);
-        } else {
-            localStorage.removeItem("participantId");
-        }
-    });
+            const query = new URLSearchParams(window.location.search);
 
-    const promptForParticipantId = () => {
-        const id = prompt(
-            "Enter your participant ID, or leave blank to clear:",
-            participantId ?? "",
-        )?.trim();
+            if (query.has("embed")) {
+                result.embed = true;
+                result.fullscreen = true;
 
-        if (id != null) {
-            participantId = id;
-        }
-    };
+                let setShow = false;
+                window.addEventListener("message", (event) => {
+                    if (typeof event.data === "object" && "embed" in event.data) {
+                        result.language = embeddedLanguage("embed", event.data.embed);
 
-    onMount(() => {
-        analytics.sendEvent(participantId, { type: "sessionstart" });
+                        if (!setShow) {
+                            Object.assign(result.show, event.data.show);
+                            setShow = true;
+                        }
+                    }
+                });
 
-        window.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === "hidden") {
-                analytics.sendEvent(participantId, { type: "sessionend" });
+                window.parent.postMessage("requestEmbed", "*");
+
+                return result;
             }
-        });
-    });
+
+            if (query.has("preview")) {
+                result.preview = true;
+            }
+
+            if (query.has("debug")) {
+                result.debug = true;
+            }
+
+            if (query.has("fullscreen")) {
+                result.fullscreen = true;
+            }
+
+            if (query.has("language")) {
+                const name = query.get("language")!;
+                result.language = languages.find((language) => language.name === name);
+            }
+
+            result.language ??= languages[0];
+
+            if (query.has("code")) {
+                result.code = query.get("code")!;
+            }
+
+            if (query.has("selections")) {
+                result.selections = parseSelections(query.get("selections")!);
+            }
+
+            if (query.has("hidden")) {
+                result.hiddenNodes = query.get("hidden")!.split(",");
+            }
+
+            if (query.has("errorMessage")) {
+                result.errorMessage = query.get("errorMessage")!;
+            }
+
+            if (query.has("show")) {
+                for (const key in defaultShow) {
+                    result.show[key as keyof Show] = false;
+                }
+
+                for (const entry of query.get("show")!.split(",")) {
+                    if (entry in result.show) {
+                        result.show[entry as keyof Show] = true;
+                    }
+                }
+            }
+
+            return result;
+        })(),
+    );
 
     let visualizer = $state<Visualizer>();
-    let language = $state<compiler.Language>();
-    let code = $state("");
-    let selections = $state<[number, number][]>([]);
-    let errorMessage = $state("");
-    let show = $state(defaultShow);
     let selectedGroup = $state<compiler.Group>();
-    let embed = $state(false);
 
-    const resolvedLanguage = $derived(language?.init());
+    const resolvedLanguage = $derived(query.language?.init());
 
     let compileResult = $state<compiler.CompileResult>();
 
     $effect(() => {
-        code;
-        $state.snapshot(show); // react to each option
+        query.code;
+        $state.snapshot(query.show); // react to each option
+
         resolvedLanguage?.then((language) => {
-            compileResult = language.compile(code, show);
+            compileResult = language.compile(query.code, query.show);
         });
     });
 
-    const filter = $derived(selectionFilter(selections));
+    const filter = $derived(selectionFilter(query.selections, query.hiddenNodes));
 
     const highlightedRanges = $derived.by(() => {
         if (compileResult == null || selectedGroup == null) {
@@ -111,64 +176,55 @@
         );
     });
 
-    const stringifySelections = (selections: [number, number][]) =>
-        selections.map(([start, end]) => `${start}-${end}`).join(",");
-
-    const parseSelections = (string: string): [number, number][] => {
-        if (string.length === 0) {
-            return [];
-        }
-
-        return string.split(",").map((part) => part.split("-").map(parseFloat) as [number, number]);
-    };
-
     const update = debounce(50, async () => {
-        if (language == null) return;
+        if (query.language == null) return;
 
         const url = new URL(window.location.href);
-        url.searchParams.set("language", language.name);
-        url.searchParams.set("code", code);
-        url.searchParams.set("selections", stringifySelections(selections));
-        url.searchParams.set("errorMessage", errorMessage);
+
+        if (query.debug) url.searchParams.set("debug", "1");
+
+        url.searchParams.set("language", query.language.name);
+
+        url.searchParams.set("code", query.code);
+
+        url.searchParams.set("errorMessage", query.errorMessage);
+
+        url.searchParams.set("selections", stringifySelections(query.selections));
+
+        url.searchParams.set("hidden", query.hiddenNodes.join(","));
+
+        url.searchParams.set(
+            "show",
+            Object.entries(query.show)
+                .filter(([_, enabled]) => enabled)
+                .map(([key]) => key)
+                .join(","),
+        );
+
         window.history.replaceState({}, "", url.toString());
     });
 
     $effect(() => {
-        if (embed) return;
+        if (query.embed) return;
 
-        language;
-        code;
-        selections;
-        errorMessage;
+        query.language;
+        query.code;
+        query.errorMessage;
+        $state.snapshot(query.selections);
+        $state.snapshot(query.hiddenNodes);
+        $state.snapshot(query.show);
+
         update();
     });
 
-    let prevCodeState = "";
-    const updateAnalytics = debounce(2500, () => {
-        const codeState = { language: language?.name, code, selections, errorMessage };
-        const codeStateJson = JSON.stringify(codeState);
-
-        if (codeStateJson === prevCodeState) return;
-        prevCodeState = codeStateJson;
-
-        analytics.sendEvent(participantId, { type: "code", ...codeState });
-    });
-
+    let prevCode = query.code;
     $effect(() => {
-        if (embed) return;
+        if (query.embed || query.code === prevCode) return;
 
-        code;
         selectedGroup = undefined;
-    });
+        query.hiddenNodes = [];
 
-    $effect(() => {
-        if (embed) return;
-
-        language;
-        code;
-        selections;
-        errorMessage;
-        updateAnalytics();
+        prevCode = query.code;
     });
 
     const saveImage = async () => {
@@ -242,103 +298,29 @@
         link.href = croppedCanvas.toDataURL();
         link.download = `typecircuits-${Date.now()}.png`;
         link.click();
-
-        analytics.sendEvent(participantId, { type: "save" });
     };
 
     let printing = $state<PrintOptions>();
 
-    $effect(() => {
-        if (printing) {
-            analytics.sendEvent(participantId, { type: "print" });
-        }
-    });
-
-    let fullscreen = $state(false);
     onMount(() => {
         document.addEventListener("fullscreenchange", (e) => {
-            fullscreen = document.fullscreenElement != null;
+            query.fullscreen = document.fullscreenElement != null;
         });
     });
-
-    $effect(() => {
-        if (fullscreen) {
-            analytics.sendEvent(participantId, { type: "project" });
-        }
-    });
-
-    let preview = $state(false);
-    let debug = $state(false);
 
     let showExamples = $state(false);
 
     const onclickexample = (example: Example) => {
-        code = example.code;
-        selections = example.selections ?? [];
-        errorMessage = example.errorMessage ?? "";
+        query.code = example.code;
+        query.selections = example.selections ?? [];
+        query.errorMessage = example.errorMessage ?? "";
         showExamples = false;
-        show = { ...defaultShow, ...example.show };
-
-        analytics.sendEvent(participantId, { type: "example", example: example.title });
+        query.show = { ...defaultShow, ...example.show };
     };
 
     const oncloseexamples = () => {
         showExamples = false;
     };
-
-    onMount(() => {
-        const query = new URLSearchParams(window.location.search);
-
-        if (query.has("embed")) {
-            embed = true;
-            fullscreen = true;
-
-            let setShow = false;
-            window.addEventListener("message", (event) => {
-                if (typeof event.data === "object" && "embed" in event.data) {
-                    language = embeddedLanguage("embed", event.data.embed);
-
-                    if (!setShow) {
-                        Object.assign(show, event.data.show);
-                        setShow = true;
-                    }
-                }
-            });
-
-            window.parent.postMessage("requestEmbed", "*");
-
-            return;
-        }
-
-        if (query.has("preview")) {
-            preview = true;
-        }
-
-        if (query.has("debug")) {
-            debug = true;
-        }
-
-        if (query.has("fullscreen")) {
-            fullscreen = true;
-        }
-
-        if (query.has("language")) {
-            const name = query.get("language")!;
-            language = languages.find((language) => language.name === name);
-        }
-
-        if (query.has("code")) {
-            code = query.get("code")!;
-        }
-
-        if (query.has("selections")) {
-            selections = parseSelections(query.get("selections")!);
-        }
-
-        if (language == null) {
-            language = languages[0];
-        }
-    });
 
     const onscan = () => {
         if (compileResult == null) return;
@@ -367,30 +349,30 @@
 
 <div
     class="flex h-screen w-screen flex-col"
-    style:padding={fullscreen ? "4px" : "10px"}
-    style:gap={fullscreen ? "0" : "10px"}
+    style:padding={query.fullscreen ? "4px" : "10px"}
+    style:gap={query.fullscreen ? "0" : "10px"}
 >
     <div class="flex flex-row items-center justify-between gap-[10px]">
-        {#if !fullscreen}
+        {#if !query.fullscreen}
             <div class="flex flex-row items-center gap-[10px] font-semibold">
-                {#if language != null}
-                    <LanguageDropdown bind:selection={language} />
+                {#if query.language != null}
+                    <LanguageDropdown bind:selection={query.language} />
                 {/if}
             </div>
         {/if}
 
-        {#if !fullscreen || errorMessage}
+        {#if !query.fullscreen || query.errorMessage}
             <input
                 type="text"
                 placeholder="error message"
-                bind:value={errorMessage}
+                bind:value={query.errorMessage}
                 class="h-full flex-1 rounded-[10px] text-center font-mono text-sm not-placeholder-shown:border-transparent not-placeholder-shown:bg-red-50 not-placeholder-shown:text-red-500 placeholder-shown:border-black/5"
-                style:font-size={fullscreen ? "20pt" : undefined}
-                style:border-width={fullscreen ? undefined : "1.5px"}
+                style:font-size={query.fullscreen ? "20pt" : undefined}
+                style:border-width={query.fullscreen ? undefined : "1.5px"}
             />
         {/if}
 
-        {#if !fullscreen}
+        {#if !query.fullscreen}
             <div class="flex flex-row items-center gap-[10px]">
                 {#if visualizer != null}
                     {@const active = compileResult != null && compileResult.nodes.size > 0}
@@ -435,39 +417,28 @@
                     <Icon>tv</Icon>
                     Project
                 </Button>
-
-                {#if import.meta.env.VITE_RESEARCH_ENABLED}
-                    <Button
-                        onclick={promptForParticipantId}
-                        data-participant-id={participantId || undefined}
-                        class="data-[participant-id]:bg-blue-50 data-[participant-id]:text-blue-500"
-                    >
-                        <Icon>school</Icon>
-                        Research
-                    </Button>
-                {/if}
             </div>
         {/if}
     </div>
 
     <div
         class="relative flex min-h-0 flex-1 flex-col lg:flex-row"
-        style:gap={fullscreen ? "0" : "10px"}
+        style:gap={query.fullscreen ? "0" : "10px"}
     >
-        {#if !fullscreen}
+        {#if !query.fullscreen}
             <div
                 class={[
                     "flex flex-1 resize-none border-black/5 font-mono focus:outline-blue-500 lg:max-w-[500px]",
-                    fullscreen ? "" : "rounded-lg border-[1.5px]",
+                    query.fullscreen ? "" : "rounded-lg border-[1.5px]",
                 ]}
             >
-                {#if language}
+                {#if query.language}
                     <Editor
-                        {language}
-                        bind:code
-                        bind:selections
+                        language={query.language}
+                        bind:code={query.code}
+                        bind:selections={query.selections}
                         {highlightedRanges}
-                        {fullscreen}
+                        fullscreen={query.fullscreen}
                         onshowexamples={() => (showExamples = true)}
                     />
                 {/if}
@@ -477,10 +448,10 @@
         <div
             class={[
                 "flex flex-2 flex-col border-black/5",
-                fullscreen ? "" : "rounded-lg border-[1.5px]",
+                query.fullscreen ? "" : "rounded-lg border-[1.5px]",
             ]}
         >
-            {#if debug}
+            {#if query.debug}
                 <div class="flex-1 border-b-[1.5px] border-black/5 p-4">
                     {#if compileResult?.root != null}
                         <pre>{compiler.debugTree(compileResult.root)}</pre>
@@ -492,9 +463,10 @@
                 <Visualizer
                     bind:this={visualizer}
                     {compileResult}
-                    {preview}
-                    bind:show
-                    bind:selections
+                    preview={query.preview}
+                    bind:show={query.show}
+                    bind:selections={query.selections}
+                    bind:hiddenNodes={query.hiddenNodes}
                     bind:selectedGroup
                 />
             </div>
@@ -504,18 +476,18 @@
 
 {#if compileResult != null && printing != null}
     <PrintView
-        {code}
-        {errorMessage}
+        code={query.code}
+        errorMessage={query.errorMessage}
         options={printing}
         nodes={compileResult.nodes.values().filter(filter).toArray()}
         onfinish={() => (printing = undefined)}
     />
 {/if}
 
-{#if showExamples && language != null}
+{#if showExamples && query.language != null}
     <Modal width="800px" height="650px" onclose={oncloseexamples}>
         <Examples
-            bind:language
+            bind:language={query.language}
             {resolvedLanguage}
             onclick={onclickexample}
             onclose={oncloseexamples}

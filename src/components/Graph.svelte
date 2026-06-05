@@ -30,6 +30,7 @@
         filter: (node: compiler.Node) => boolean;
         show: Show;
         compileResult: compiler.CompileResult;
+        onhidenode: (node: compiler.Node) => void;
     }
 
     let {
@@ -39,6 +40,7 @@
         filter,
         show,
         compileResult,
+        onhidenode,
     }: Props = $props();
 
     let direction = $state<"RIGHT" | "DOWN">("RIGHT");
@@ -55,7 +57,7 @@
 
     const getLayouted = async () => {
         try {
-            const { clusters, nodeIds, edgeCoordinates } = await layout(
+            const { nodes, clusters, edgeCoordinates } = await layout(
                 direction,
                 compileResult,
                 filter,
@@ -113,7 +115,7 @@
                         data: {
                             node,
                             show,
-                            setActive: (active: boolean) => {
+                            onsetactive: (active: boolean) => {
                                 if (active) {
                                     const nodes = new Set<compiler.Node>([node]);
                                     while (true) {
@@ -136,6 +138,7 @@
                                     activeNodes.current = [];
                                 }
                             },
+                            onhide: () => onhidenode(node),
                         },
                         position: {
                             x: boundingBox.x,
@@ -152,8 +155,6 @@
                 edges: compileResult.edges.flatMap((edge) => {
                     const { from: source, to: target } = edge;
 
-                    const sourceId = nodeIds.get(source)!;
-                    const targetId = nodeIds.get(target)!;
                     const targetGroup = compileResult.groups.find((group) =>
                         group.nodes.has(target),
                     );
@@ -163,7 +164,7 @@
                         return [];
                     }
 
-                    const id = `edge-${sourceId}-${targetId}`;
+                    const id = `edge-${source.id}-${target.id}`;
 
                     const coordinates = edgeCoordinates(source, target);
                     if (coordinates == null) {
@@ -175,8 +176,8 @@
                             ...sharedProps,
                             id,
                             type: "Edge",
-                            source: sourceId,
-                            target: targetId,
+                            source: source.id,
+                            target: target.id,
                             label: edge,
                             zIndex: 2,
                             markerEnd: { type: MarkerType.ArrowClosed },

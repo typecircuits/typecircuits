@@ -57,25 +57,6 @@ export const python = treesitterLanguage({
     editorExtensions: [pythonExtension()],
     treesitterUrl: treesitterPythonUrl,
     features: [
-        features.hideDefault(),
-        features.hide({
-            transparent: [
-                node("module"),
-                node("expression_statement"),
-                node("return_statement"),
-                node("for_statement"),
-                node("while_statement"),
-                node("assignment"),
-                node("parameters"),
-                node("argument_list"),
-                node("block"),
-                node("else_clause"),
-                node("ellipsis"),
-                node("pass_statement"),
-                node("parenthesized_expression"),
-            ],
-            atomic: [node("string"), node("type")],
-        }),
         features.nameResolution({
             definitions: [
                 node("assignment", (node) => [
@@ -244,7 +225,6 @@ export const python = treesitterLanguage({
                 })),
             ],
             arrayType: listType,
-            voidType: noneType,
         }),
     ],
 });

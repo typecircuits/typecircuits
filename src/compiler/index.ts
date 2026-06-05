@@ -7,7 +7,7 @@ import type { Show } from "@/App.svelte";
 await treesitter.Parser.init({ locateFile: () => treeSitterWasmUrl });
 
 export class Node {
-    public id?: string;
+    public id!: string;
     public startIndex?: number;
     public endIndex?: number;
     public type!: string;
@@ -26,7 +26,10 @@ export class Node {
     }
 }
 
-const convertNode = (input: treesitter.Node | null | undefined): Node | undefined => {
+const convertNode = (
+    input: treesitter.Node | null | undefined,
+    id: { next: number },
+): Node | undefined => {
     if (input == null || !input.isNamed) {
         return undefined;
     }
@@ -34,12 +37,13 @@ const convertNode = (input: treesitter.Node | null | undefined): Node | undefine
     const indices = new Map<Node, number>();
 
     const node = new Node({
+        id: `node${id.next++}`,
         startIndex: input.startIndex,
         endIndex: input.endIndex,
         type: input.type,
         text: input.text,
         children: input.children
-            .map((node, index) => [index, convertNode(node)] as const)
+            .map((node, index) => [index, convertNode(node, id)] as const)
             .filter(([_, node]) => node != null)
             .map(([index, node]) => {
                 indices.set(node!, index);
@@ -47,7 +51,7 @@ const convertNode = (input: treesitter.Node | null | undefined): Node | undefine
             }),
         components: input.children
             .filter((node) => node != null)
-            .map((child) => convertNode(child) ?? child.text),
+            .map((child) => convertNode(child, id) ?? child.text),
     });
 
     for (const child of node.children) {
@@ -172,7 +176,7 @@ export class Context {
     }
 
     temporary() {
-        const node = new Node({ type: "", text: "", children: [], components: [] });
+        const node = new Node({ id: "", type: "", text: "", children: [], components: [] });
         this.transparent(node);
         return node;
     }
@@ -326,7 +330,7 @@ export const treesitterLanguage = (language: {
                         return undefined;
                     }
 
-                    return compile(convertNode(root), language.features, show);
+                    return compile(convertNode(root, { next: 0 }), language.features, show);
                 },
             };
         },
