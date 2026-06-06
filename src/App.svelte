@@ -159,6 +159,8 @@
 
     const filter = $derived(selectionFilter(query.selections, query.hiddenNodes));
 
+    const nodes = $derived(compileResult?.nodes.values().filter(filter).toArray());
+
     const highlightedRanges = $derived.by(() => {
         if (compileResult == null || selectedGroup == null) {
             return [];
@@ -323,9 +325,7 @@
     };
 
     const onscan = () => {
-        if (compileResult == null) return;
-
-        const nodes = compileResult.nodes.values().filter(filter).toArray();
+        if (compileResult == null || nodes == null) return;
 
         const cards = nodes.map((node) => node.toString());
 
@@ -375,7 +375,7 @@
         {#if !query.fullscreen}
             <div class="flex flex-row items-center gap-[10px]">
                 {#if visualizer != null}
-                    {@const active = compileResult != null && compileResult.nodes.size > 0}
+                    {@const active = nodes != null && nodes.length > 0}
 
                     <div
                         class="flex flex-row items-center gap-[10px]"
@@ -479,7 +479,7 @@
         code={query.code}
         errorMessage={query.errorMessage}
         options={printing}
-        nodes={compileResult.nodes.values().filter(filter).toArray()}
+        {nodes}
         onfinish={() => (printing = undefined)}
     />
 {/if}

@@ -21,9 +21,9 @@
 
     let container: HTMLDivElement;
 
-    const margin = 0.5;
-    const width = 8.5 - margin * 2;
-    const height = 11 - margin * 2;
+    const margin = 0.3;
+    const width = 11 - margin * 2;
+    const height = 8.5 - margin * 2;
 
     const widthPx = width * 60;
     const heightPx = height * 60;
@@ -104,7 +104,7 @@
             jsPDF: {
                 unit: "in",
                 format: "letter",
-                orientation: "portrait",
+                orientation: "landscape",
             },
         } as any);
 
