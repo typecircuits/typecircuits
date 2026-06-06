@@ -44,7 +44,7 @@
         "@tree-sitter-grammars/tree-sitter-kotlin": "^1.1.0",
         "@uiw/codemirror-theme-github": "^4.25.10",
         "@xyflow/svelte": "^1.2.3",
-        "aruco-marker": "^3.0.1",
+        "apriltag": "^2.0.3",
         "autoprefixer": "^10.4.27",
         "change-case": "^5.4.4",
         "codemirror": "^6.0.2",
