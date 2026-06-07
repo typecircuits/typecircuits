@@ -72,21 +72,6 @@
             if (query.has("embed")) {
                 result.embed = true;
                 result.fullscreen = true;
-
-                let setShow = false;
-                window.addEventListener("message", (event) => {
-                    if (typeof event.data === "object" && "embed" in event.data) {
-                        result.language = embeddedLanguage("embed", event.data.embed);
-
-                        if (!setShow) {
-                            Object.assign(result.show, event.data.show);
-                            setShow = true;
-                        }
-                    }
-                });
-
-                window.parent.postMessage("requestEmbed", "*");
-
                 return result;
             }
 
@@ -140,6 +125,24 @@
             return result;
         })(),
     );
+
+    $effect(() => {
+        if (!query.embed) return;
+
+        let setShow = false;
+        window.addEventListener("message", (event) => {
+            if (typeof event.data === "object" && "embed" in event.data) {
+                query.language = embeddedLanguage("embed", event.data.embed);
+
+                if (!setShow) {
+                    Object.assign(query.show, event.data.show);
+                    setShow = true;
+                }
+            }
+        });
+
+        window.parent.postMessage("requestEmbed", "*");
+    });
 
     let visualizer = $state<Visualizer>();
     let selectedGroup = $state<compiler.Group>();
