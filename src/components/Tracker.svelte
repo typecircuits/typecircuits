@@ -7,22 +7,22 @@
     }
 
     const family = new AprilTagFamily(tagConfig36h11);
-    const size = 10;
     const scale = 20;
 
     const { index }: Props = $props();
 
     const tagImage = $derived.by(() => {
+        const markerData = family.render(index);
+        const size = markerData.length;
+        const border = 1; // skip drawing the white border
+
         const canvas = document.createElement("canvas");
         canvas.width = size * scale;
         canvas.height = size * scale;
 
         const ctx = canvas.getContext("2d")!;
-
-        const markerData = family.render(index);
-        console.log({ markerData });
-        for (let y = 0; y < size; y++) {
-            for (let x = 0; x < size; x++) {
+        for (let y = border; y < size - border; y++) {
+            for (let x = border; x < size - border; x++) {
                 const marker = markerData[y][x];
                 switch (marker) {
                     case "w":
@@ -46,9 +46,4 @@
     });
 </script>
 
-<img
-    src={tagImage}
-    alt=""
-    class="mx-auto mb-[24px] block size-[0.65in]"
-    style:image-rendering="pixelated"
-/>
+<img src={tagImage} alt="" class="mx-auto my-[10px] block size-[0.75in]" />

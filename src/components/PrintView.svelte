@@ -135,9 +135,9 @@
         <div class="inline-block">
             <Node
                 data={{ node }}
-                fontSize={24}
-                paddingX={16}
-                paddingY={24}
+                fontSize={20}
+                paddingTop={options.trackers ? 0 : 24}
+                paddingBottom={options.trackers ? undefined : 24}
                 inGraph={false}
                 tracker={options.trackers ? { index } : undefined}
             />

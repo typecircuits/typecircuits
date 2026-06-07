@@ -23,8 +23,10 @@
         width?: number;
         height?: number;
         fontSize?: number;
-        paddingX?: number;
-        paddingY?: number;
+        paddingTop?: number;
+        paddingRight?: number;
+        paddingBottom?: number;
+        paddingLeft?: number;
         inGraph?: boolean;
         tracker?: { index: number };
     }
@@ -34,8 +36,10 @@
         width,
         height,
         fontSize = nodeLabelFontSize,
-        paddingX = nodePaddingX,
-        paddingY = nodePaddingY,
+        paddingTop = nodePaddingY,
+        paddingRight = nodePaddingX,
+        paddingBottom = nodePaddingY,
+        paddingLeft = nodePaddingX,
         inGraph = true,
         tracker,
     }: Props = $props();
@@ -59,8 +63,10 @@
         style:height={height && height + "px"}
         style:margin-right={width == null ? nodeMargin + "px" : undefined}
         style:margin-bottom={height == null ? nodeMargin + "px" : undefined}
-        style:padding-inline="{paddingX}px"
-        style:padding-block="{paddingY}px"
+        style:padding-top="{paddingTop}px"
+        style:padding-right="{paddingRight}px"
+        style:padding-bottom="{paddingBottom}px"
+        style:padding-left="{paddingLeft}px"
         style:opacity={isSelected ? 1 : 0.5}
         style:border-radius="{8}px"
         style:border-color={inGraph ? "var(--color-gray-400)" : "black"}
