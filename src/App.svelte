@@ -474,7 +474,7 @@
     </div>
 </div>
 
-{#if compileResult != null && printing != null}
+{#if nodes != null && printing != null}
     <PrintView
         code={query.code}
         errorMessage={query.errorMessage}

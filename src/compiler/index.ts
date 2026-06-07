@@ -8,8 +8,8 @@ await treesitter.Parser.init({ locateFile: () => treeSitterWasmUrl });
 
 export class Node {
     public id!: string;
-    public startIndex?: number;
-    public endIndex?: number;
+    public startIndex!: number;
+    public endIndex!: number;
     public type!: string;
     public text!: string;
     public children!: Node[];
@@ -176,8 +176,18 @@ export class Context {
     }
 
     temporary() {
-        const node = new Node({ id: "", type: "", text: "", children: [], components: [] });
+        const node = new Node({
+            id: "",
+            startIndex: 0,
+            endIndex: 0,
+            type: "",
+            text: "",
+            children: [],
+            components: [],
+        });
+
         this.transparent(node);
+
         return node;
     }
 
@@ -251,14 +261,27 @@ const compile = (root: Node | undefined, features: Feature[], show: Show) => {
         }
     }
 
-    const result = {
-        root,
-        nodes: new Set(
+    const nodes = [
+        ...new Set(
             groups
                 .nodes()
                 .map(replace)
                 .filter((node) => node != null),
         ),
+    ];
+
+    // Sort nodes by source location
+    nodes.sort((a, b) => {
+        if (a.startIndex !== b.startIndex) {
+            return a.startIndex - b.startIndex;
+        }
+
+        return a.endIndex - b.endIndex;
+    });
+
+    const result = {
+        root,
+        nodes,
         edges: context.edges
             .map((edge) => {
                 const from = replace(edge.from);

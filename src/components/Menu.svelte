@@ -30,7 +30,7 @@
     let wrapperVisible = $state(false);
     let contentVisible = $state(false);
 
-    const handle = (e: PointerEvent) => {
+    const handle = (e: MouseEvent) => {
         e.preventDefault();
 
         const reference = e.currentTarget as HTMLElement;
