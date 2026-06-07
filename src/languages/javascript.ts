@@ -64,7 +64,7 @@ export const javascript = treesitterLanguage({
                 ),
                 node("function_declaration", (node) => [{ definition: node.children[0] }]),
             ],
-            scopes: [node("function_declaration"), node("for_statement")],
+            scopes: [node("function_declaration"), node("arrow_function"), node("for_statement")],
             names: [node("identifier"), node("member_expression")],
             ignore: Object.keys(builtinFunctions),
         }),
@@ -141,6 +141,8 @@ export const javascript = treesitterLanguage({
                 node("arrow_function", (node) => ({
                     function: node,
                     inputs: node.children[0].children,
+                    output:
+                        node.children[1].type !== "statement_block" ? node.children[1] : undefined,
                 })),
             ],
             returnValue: [node("return_statement", (node) => node.children[0])],
