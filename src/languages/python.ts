@@ -139,7 +139,6 @@ export const python = treesitterLanguage({
                     function: node,
                     definition: node.children[0],
                     inputs: node.children[1].children,
-                    output: node.children[2],
                 })),
             ],
             returnValue: [node("return_statement", (node) => node.children[0])],
