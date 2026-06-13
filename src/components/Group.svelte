@@ -26,7 +26,7 @@
 
             {#each data.labels as label, index}
                 {#if index > 0}
-                    <span class="opacity-75">/</span>
+                    <span class="opacity-75">or</span>
                 {/if}
 
                 <pre class="inline">{label}</pre>
