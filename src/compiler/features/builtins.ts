@@ -124,7 +124,7 @@ export const builtinMathOperators = (options: BuiltinMathOperatorsOptions) =>
             Object.entries(options.operators).map(([operator, types]) => [
                 operator,
                 (left, right, output) => ({
-                    groups: [],
+                    groups: [[left, right]],
                     overloads: types.map((type) => [
                         [left, type],
                         [right, type],
