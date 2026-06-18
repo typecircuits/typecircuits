@@ -58,7 +58,11 @@ export const kotlin = treesitterLanguage({
                 node("function_declaration", (node) => [{ definition: node.children[0] }]),
             ],
             scopes: [node("function_declaration"), node("for_statement"), node("block")],
-            names: [node("identifier")],
+            names: [
+                node("identifier", (node) =>
+                    node.parent?.type === "user_type" ? undefined : node,
+                ),
+            ],
             ignore: Object.keys(builtinFunctions),
         }),
         features.builtinLiterals({
@@ -137,6 +141,12 @@ export const kotlin = treesitterLanguage({
                     function: node,
                     definition: node.children[0],
                     inputs: node.children[1].children,
+                    output:
+                        node.children.at(-1)?.type === "function_body"
+                            ? node.children.length > 3
+                                ? node.children.at(-2)
+                                : undefined
+                            : node.children[2],
                 })),
             ],
             returnValue: [node("return_expression", (node) => node.children[0])],

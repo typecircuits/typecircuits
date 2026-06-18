@@ -139,6 +139,7 @@ export const python = treesitterLanguage({
                     function: node,
                     definition: node.children[0],
                     inputs: node.children[1].children,
+                    output: node.children.length > 3 ? node.children[2] : undefined,
                 })),
             ],
             returnValue: [node("return_statement", (node) => node.children[0])],

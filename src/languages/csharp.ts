@@ -134,11 +134,13 @@ export const csharp = treesitterLanguage({
                     function: node,
                     definition: node.children[1],
                     inputs: node.children[2].children,
+                    output: node.children[0],
                 })),
                 node("method_declaration", (node) => ({
                     function: node,
                     definition: node.children[1],
                     inputs: node.children[2].children,
+                    output: node.children[0],
                 })),
             ],
             returnValue: [node("return_statement", (node) => node.children[0])],
