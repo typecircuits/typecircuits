@@ -7,6 +7,7 @@
 
     interface Props {
         preview?: boolean;
+        debug?: boolean;
         selections: [number, number][];
         hiddenNodes: string[];
         compileResult: compiler.CompileResult | undefined;
@@ -16,6 +17,7 @@
 
     let {
         preview,
+        debug,
         compileResult,
         selections = $bindable(),
         hiddenNodes = $bindable(),
@@ -76,6 +78,7 @@
             <SvelteFlowProvider>
                 <Graph
                     bind:context={svelteFlowContext!}
+                    {debug}
                     {preview}
                     bind:selectedGroup
                     filter={selectionFilter(selections, hiddenNodes)}

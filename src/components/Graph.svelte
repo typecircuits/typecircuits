@@ -25,6 +25,7 @@
 
     interface Props {
         context: ReturnType<typeof useSvelteFlow>;
+        debug?: boolean;
         preview?: boolean;
         selectedGroup: compiler.Group | undefined;
         filter: (node: compiler.Node) => boolean;
@@ -35,6 +36,7 @@
 
     let {
         context = $bindable(),
+        debug,
         preview,
         selectedGroup = $bindable(),
         filter,
@@ -114,6 +116,7 @@
                         type: "Node",
                         data: {
                             node,
+                            debug,
                             show,
                             onsetactive: (active: boolean) => {
                                 if (active) {

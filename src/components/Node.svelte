@@ -17,6 +17,7 @@
     interface Props {
         data: {
             node: compiler.Node;
+            debug?: boolean;
             onsetactive?: (active: boolean) => void;
             onhide?: () => void;
         };
@@ -86,6 +87,12 @@
         >
             {data.node.toString()}
         </code>
+
+        {#if data.debug}
+            <code class="absolute inset-x-0 bottom-[4px] text-center text-[6pt] opacity-50">
+                {data.node.type}
+            </code>
+        {/if}
     </div>
 
     {#snippet items()}

@@ -465,8 +465,9 @@
             <div class="flex-1">
                 <Visualizer
                     bind:this={visualizer}
-                    {compileResult}
+                    debug={query.debug}
                     preview={query.preview}
+                    {compileResult}
                     bind:show={query.show}
                     bind:selections={query.selections}
                     bind:hiddenNodes={query.hiddenNodes}
