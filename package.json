@@ -8,8 +8,7 @@
         "build": "vite build",
         "preview": "vite preview",
         "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
-        "format": "prettier --write .",
-        "functions": "netlify functions:serve --port 8080"
+        "format": "prettier --write ."
     },
     "devDependencies": {
         "@modyfi/vite-plugin-yaml": "^1.1.1",
@@ -37,7 +36,6 @@
         "@fontsource-variable/inter": "^5.2.6",
         "@fontsource-variable/jetbrains-mono": "^5.2.6",
         "@fontsource-variable/material-symbols-rounded": "^5.2.18",
-        "@netlify/functions": "^5.1.0",
         "@replit/codemirror-lang-csharp": "^6.2.0",
         "@tailwindcss/postcss": "^4.2.2",
         "@tailwindcss/vite": "^4.1.12",

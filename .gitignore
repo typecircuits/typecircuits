@@ -2,7 +2,6 @@
 .env.*
 !.env.example
 !.env.*.example
-.netlify/
 
 # Logs
 logs
