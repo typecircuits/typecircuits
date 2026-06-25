@@ -48,6 +48,65 @@ const builtinFields: features.BuiltinFieldsOptions["fields"] = {
             ],
         };
     },
+    filter: (field, object, context) => {
+        const element = context.temporary();
+
+        return {
+            groups: [],
+            overloads: [
+                [
+                    [object, listType(element)],
+                    [
+                        field,
+                        functionType([functionType([element], booleanType)], listType(element)),
+                    ],
+                ],
+            ],
+        };
+    },
+    fold: (field, object, context) => {
+        const element = context.temporary();
+        const result = context.temporary();
+
+        return {
+            groups: [],
+            overloads: [
+                [
+                    [object, listType(element)],
+                    [
+                        field,
+                        functionType([result, functionType([result, element], result)], result),
+                    ],
+                ],
+            ],
+        };
+    },
+    any: (field, object, context) => {
+        const element = context.temporary();
+
+        return {
+            groups: [],
+            overloads: [
+                [
+                    [object, listType(element)],
+                    [field, functionType([functionType([element], booleanType)], booleanType)],
+                ],
+            ],
+        };
+    },
+    all: (field, object, context) => {
+        const element = context.temporary();
+
+        return {
+            groups: [],
+            overloads: [
+                [
+                    [object, listType(element)],
+                    [field, functionType([functionType([element], booleanType)], booleanType)],
+                ],
+            ],
+        };
+    },
 };
 
 export const kotlin = treesitterLanguage({
