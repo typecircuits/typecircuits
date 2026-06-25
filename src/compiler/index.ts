@@ -279,21 +279,36 @@ const compile = (root: Node | undefined, features: Feature[], show: Show) => {
         return a.endIndex - b.endIndex;
     });
 
+    // Collapse edges
+    let edges = [...context.edges];
+    while (true) {
+        let progress = false;
+        edges = edges.flatMap((edge) => {
+            const from = replace(edge.from);
+            const to = replace(edge.to);
+
+            if (from != null && to != null) {
+                return [{ from, to, label: edge.label }];
+            } else if (to != null) {
+                const other = edges.find((other) => other !== edge && other.to === edge.from);
+                if (other == null) return [];
+
+                progress = true;
+                return [{ from: other.from, to, label: other.label }];
+            } else {
+                return [];
+            }
+        });
+
+        if (!progress) {
+            break;
+        }
+    }
+
     const result = {
         root,
         nodes,
-        edges: context.edges
-            .map((edge) => {
-                const from = replace(edge.from);
-                const to = replace(edge.to);
-
-                if (from == null || to == null) {
-                    return undefined;
-                }
-
-                return { from, to, label: edge.label };
-            })
-            .filter((edge) => edge != null),
+        edges,
         groups: groups.groups
             .values()
             .map(

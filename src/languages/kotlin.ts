@@ -23,14 +23,31 @@ const builtinFunctions: features.BuiltinFunctionsOptions["functions"] = {
         groups: [],
         overloads: [functionType([], unitType), functionType([null], unitType)],
     }),
-    size: () => ({
-        groups: [],
-        overloads: [intType],
-    }),
     listOf: (inputs) => ({
         groups: [inputs], // all elements must have the same type
         overloads: [functionType(inputs, listType(inputs[0] ?? null))],
     }),
+};
+
+const builtinFields: features.BuiltinFieldsOptions["fields"] = {
+    size: (field) => ({
+        groups: [],
+        overloads: [[[field, intType]]],
+    }),
+    map: (field, object, context) => {
+        const element = context.temporary();
+        const result = context.temporary();
+
+        return {
+            groups: [],
+            overloads: [
+                [
+                    [object, listType(element)],
+                    [field, functionType([functionType([element], result)], listType(result))],
+                ],
+            ],
+        };
+    },
 };
 
 export const kotlin = treesitterLanguage({
@@ -86,6 +103,12 @@ export const kotlin = treesitterLanguage({
             inputs: (node) => node.children[1].children.map((node) => node.children[0]),
             functions: builtinFunctions,
         }),
+        features.builtinFields({
+            fieldAccess: [node("navigation_expression")],
+            object: (node) => node.children[0],
+            field: (node) => node.children[1],
+            fields: builtinFields,
+        }),
         features.builtinMathOperators({
             operator: [
                 node("binary_expression", (node) => [
@@ -140,7 +163,7 @@ export const kotlin = treesitterLanguage({
                 node("function_declaration", (node) => ({
                     function: node,
                     definition: node.children[0],
-                    inputs: node.children[1].children,
+                    inputs: node.children[1].children.map((parameter) => parameter.children[0]),
                     output:
                         node.children.at(-1)?.type === "function_body"
                             ? node.children.length > 3

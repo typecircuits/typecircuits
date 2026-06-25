@@ -1,4 +1,4 @@
-import { Node, type Feature, type Selector, type Type } from "../index";
+import { Context, Node, type Feature, type Selector, type Type } from "../index";
 import { constructedType, type ConstructedType } from "../solver/type";
 
 export const makePrimitiveType = (name: string) =>
@@ -59,7 +59,7 @@ export interface BuiltinFunctionsOptions {
     inputs: (node: Node) => Node[];
     functions: Record<
         string,
-        (inputs: Node[]) => { groups: Node[][]; overloads: ConstructedType[] }
+        (inputs: Node[], context: Context) => { groups: Node[][]; overloads: ConstructedType[] }
     >;
 }
 
@@ -72,6 +72,7 @@ export const builtinFunctions =
             if (functionNode != null && functionName != null && functionName in options.functions) {
                 const { groups, overloads } = options.functions[functionName](
                     options.inputs(callNode),
+                    context,
                 );
 
                 for (const group of groups) {
@@ -83,13 +84,53 @@ export const builtinFunctions =
         });
     };
 
+export interface BuiltinFieldsOptions {
+    fieldAccess: Selector<Node>[];
+    object: (node: Node) => Node;
+    field: (node: Node) => Node;
+    fields: Record<
+        string,
+        (
+            fieldAccess: Node,
+            object: Node,
+            context: Context,
+        ) => { groups: Node[][]; overloads: [Node, ConstructedType][][] }
+    >;
+}
+
+export const builtinFields =
+    (options: BuiltinFieldsOptions): Feature =>
+    (context) => {
+        context.select(options.fieldAccess, (fieldAccessNode) => {
+            const object = options.object(fieldAccessNode);
+            const field = options.field(fieldAccessNode);
+
+            context.edge(object, fieldAccessNode, "object");
+
+            if (field.text in options.fields) {
+                const { groups, overloads } = options.fields[field.text](field, object, context);
+
+                for (const group of groups) {
+                    context.group(...group);
+                }
+
+                context.overload(overloads);
+            }
+        });
+    };
+
 export type BuiltinBinaryOperatorSelector = Selector<[Node, string, Node, Node]>;
 
 export interface BuiltinBinaryOperatorsOptions {
     operator: BuiltinBinaryOperatorSelector[];
     operators: Record<
         string,
-        (left: Node, right: Node, output: Node) => { groups: Node[][]; overloads: [Node, Type][][] }
+        (
+            left: Node,
+            right: Node,
+            output: Node,
+            context: Context,
+        ) => { groups: Node[][]; overloads: [Node, Type][][] }
     >;
 }
 
@@ -98,7 +139,12 @@ export const builtinBinaryOperators =
     (context) => {
         context.select(options.operator, ([left, operator, right, output]) => {
             if (operator in options.operators) {
-                const { groups, overloads } = options.operators[operator](left, right, output);
+                const { groups, overloads } = options.operators[operator](
+                    left,
+                    right,
+                    output,
+                    context,
+                );
 
                 for (const group of groups) {
                     context.group(...group);
