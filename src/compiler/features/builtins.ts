@@ -53,6 +53,26 @@ export const builtinLiterals =
         });
     };
 
+export interface BuiltinTypesOptions {
+    type: Selector<Node>[];
+    name: (node: Node) => string;
+    parameters: (node: Node) => Node[];
+    types: Record<string, (parameters: Type[], context: Context) => ConstructedType>;
+}
+
+export const builtinTypes =
+    (options: BuiltinTypesOptions): Feature =>
+    (context) => {
+        context.select(options.type, (type) => {
+            const name = options.name(type);
+            const parameters = options.parameters(type);
+
+            if (name in options.types) {
+                context.type(type, options.types[name](parameters, context));
+            }
+        });
+    };
+
 export interface BuiltinFunctionsOptions {
     call: Selector<Node>[];
     function: (node: Node) => [Node, string] | undefined;

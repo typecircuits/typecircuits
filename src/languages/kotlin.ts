@@ -18,6 +18,10 @@ const listType = features.makeArrayType({
     display: (element) => `List<${element}>`,
 });
 
+const builtinTypes: features.BuiltinTypesOptions["types"] = {
+    List: (parameters) => listType(parameters[0] ?? null),
+};
+
 const builtinFunctions: features.BuiltinFunctionsOptions["functions"] = {
     println: () => ({
         groups: [],
@@ -139,7 +143,14 @@ export const kotlin = treesitterLanguage({
                     node.parent?.type === "user_type" ? undefined : node,
                 ),
             ],
-            ignore: Object.keys(builtinFunctions),
+            ignore: [
+                ...Object.keys(builtinFunctions),
+                ...Object.keys(builtinFields),
+                ...Object.keys(builtinTypes),
+            ],
+        }),
+        features.replace({
+            replace: [node("callable_reference", (node) => [node, node.children[0]])],
         }),
         features.builtinLiterals({
             literals: [
@@ -155,6 +166,13 @@ export const kotlin = treesitterLanguage({
                 [node("identifier", (node) => (node.text === "null" ? node : undefined)), null],
                 [node("range_expression"), listType(intType)],
             ],
+        }),
+        features.builtinTypes({
+            type: [node("user_type")],
+            name: (node) => node.children[0].text,
+            parameters: (node) =>
+                node.children[1].children.map((parameter) => parameter.children[0]),
+            types: builtinTypes,
         }),
         features.builtinFunctions({
             call: [node("call_expression")],
@@ -299,7 +317,7 @@ export const kotlin = treesitterLanguage({
                 })),
             ],
             type: [
-                node("user_type"),
+                node("user_type", (node) => (node.children.length === 1 ? node : undefined)),
                 node("integral_type"),
                 node("floating_point_type"),
                 node("boolean_type"),

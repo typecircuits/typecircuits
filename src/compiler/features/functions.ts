@@ -32,7 +32,6 @@ export const fields =
     (context) => {
         context.select(options.field, ({ object, field, access }) => {
             if (object != null) {
-                context.transparent(object);
                 context.edge(object, access, "object");
             }
 

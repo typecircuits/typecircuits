@@ -29,9 +29,14 @@ export class Node {
 const convertNode = (
     input: treesitter.Node | null | undefined,
     id: { next: number },
+    cache: Map<treesitter.Node, Node> = new Map(),
 ): Node | undefined => {
     if (input == null || !input.isNamed) {
         return undefined;
+    }
+
+    if (cache.has(input)) {
+        return cache.get(input);
     }
 
     const indices = new Map<Node, number>();
@@ -43,7 +48,7 @@ const convertNode = (
         type: input.type,
         text: input.text,
         children: input.children
-            .map((node, index) => [index, convertNode(node, id)] as const)
+            .map((node, index) => [index, convertNode(node, id, cache)] as const)
             .filter(([_, node]) => node != null)
             .map(([index, node]) => {
                 indices.set(node!, index);
@@ -51,8 +56,10 @@ const convertNode = (
             }),
         components: input.children
             .filter((node) => node != null)
-            .map((child) => convertNode(child, id) ?? child.text),
+            .map((child) => convertNode(child, id, cache) ?? child.text),
     });
+
+    cache.set(input, node);
 
     for (const child of node.children) {
         child.parent = node;
@@ -234,9 +241,18 @@ const compile = (root: Node | undefined, features: Feature[], show: Show) => {
     }
 
     const replace = (node: Node | undefined) => {
-        for (const replacement of context.replacements) {
-            if (replacement.from === node) {
-                node = replacement.to;
+        while (true) {
+            let progress = false;
+
+            for (const replacement of context.replacements) {
+                if (replacement.from === node) {
+                    node = replacement.to;
+                    progress = true;
+                }
+            }
+
+            if (!progress) {
+                break;
             }
         }
 
