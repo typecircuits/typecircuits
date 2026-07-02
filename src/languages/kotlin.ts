@@ -171,7 +171,7 @@ export const kotlin = treesitterLanguage({
             type: [node("user_type")],
             name: (node) => node.children[0].text,
             parameters: (node) =>
-                node.children[1].children.map((parameter) => parameter.children[0]),
+                (node.children[1]?.children ?? []).map((parameter) => parameter.children[0]),
             types: builtinTypes,
         }),
         features.builtinFunctions({
