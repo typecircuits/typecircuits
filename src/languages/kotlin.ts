@@ -1,7 +1,7 @@
 import treesitterKotlinUrl from "@tree-sitter-grammars/tree-sitter-kotlin/tree-sitter-kotlin.wasm?url";
 import { StreamLanguage } from "@codemirror/language";
 import { kotlin as kotlinExtension } from "@codemirror/legacy-modes/mode/clike";
-import { node, treesitterLanguage } from "@/compiler";
+import { map, node, treesitterLanguage } from "@/compiler";
 import * as features from "@/compiler/features";
 
 const intType = features.makePrimitiveType("Int");
@@ -120,26 +120,26 @@ export const kotlin = treesitterLanguage({
     features: [
         features.nameResolution({
             definitions: [
-                node("property_declaration", (node) => [
+                map(node("property_declaration"), (node) => [
                     {
                         definition: node.children[0].children[0],
                         value: node.children[1],
                     },
                 ]),
-                node("assignment", (node) => [
+                map(node("assignment"), (node) => [
                     {
                         definition: node.children[0],
                         value: node.children[1],
                     },
                 ]),
-                node("function_value_parameters", (node) =>
+                map(node("function_value_parameters"), (node) =>
                     node.children.map((parameter) => ({ definition: parameter.children[0] })),
                 ),
-                node("function_declaration", (node) => [{ definition: node.children[0] }]),
+                map(node("function_declaration"), (node) => [{ definition: node.children[0] }]),
             ],
             scopes: [node("function_declaration"), node("for_statement"), node("block")],
             names: [
-                node("identifier", (node) =>
+                map(node("identifier"), (node) =>
                     node.parent?.type === "user_type" ? undefined : node,
                 ),
             ],
@@ -150,7 +150,15 @@ export const kotlin = treesitterLanguage({
             ],
         }),
         features.replace({
-            replace: [node("callable_reference", (node) => [node, node.children[0]])],
+            replace: [
+                map(node("callable_reference"), (node) => [node, node.children[0]]),
+                // Negative number literals
+                map(node("unary_expression"), (node) =>
+                    node.children[0].type === "number_literal"
+                        ? [node.children[0], undefined]
+                        : undefined,
+                ),
+            ],
         }),
         features.builtinLiterals({
             literals: [
@@ -158,12 +166,15 @@ export const kotlin = treesitterLanguage({
                 [node("number_literal"), intType],
                 [node("float_literal"), doubleType],
                 [
-                    node("identifier", (node) =>
+                    map(node("identifier"), (node) =>
                         node.text === "true" || node.text === "false" ? node : undefined,
                     ),
                     booleanType,
                 ],
-                [node("identifier", (node) => (node.text === "null" ? node : undefined)), null],
+                [
+                    map(node("identifier"), (node) => (node.text === "null" ? node : undefined)),
+                    null,
+                ],
                 [node("range_expression"), listType(intType)],
             ],
         }),
@@ -186,9 +197,9 @@ export const kotlin = treesitterLanguage({
             field: (node) => node.children[1],
             fields: builtinFields,
         }),
-        features.builtinMathOperators({
+        features.builtinBinaryOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -196,7 +207,47 @@ export const kotlin = treesitterLanguage({
                 ]),
             ],
             operators: {
-                "+": [intType, doubleType, stringType],
+                "+": (left, right, output, context) => {
+                    const element = context.temporary();
+
+                    return {
+                        groups: [],
+                        overloads: [
+                            [
+                                [left, intType],
+                                [right, left],
+                                [output, intType],
+                            ],
+                            [
+                                [left, doubleType],
+                                [right, left],
+                                [output, doubleType],
+                            ],
+                            [
+                                [left, stringType],
+                                [right, left],
+                                [output, stringType],
+                            ],
+                            [
+                                [left, listType(element)],
+                                [right, element],
+                                [output, listType(element)],
+                            ],
+                        ],
+                    };
+                },
+            },
+        }),
+        features.builtinMathOperators({
+            operator: [
+                map(node("binary_expression"), (node) => [
+                    node.children[0],
+                    node.components[1] as string,
+                    node.children[1],
+                    node,
+                ]),
+            ],
+            operators: {
                 "-": [intType, doubleType],
                 "*": [intType, doubleType],
                 "/": [intType, doubleType],
@@ -206,7 +257,7 @@ export const kotlin = treesitterLanguage({
         }),
         features.builtinComparisonOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -219,13 +270,13 @@ export const kotlin = treesitterLanguage({
         }),
         features.builtinLogicOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
                     node,
                 ]),
-                node("infix_expression", (node) => [
+                map(node("infix_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -237,7 +288,7 @@ export const kotlin = treesitterLanguage({
         }),
         features.functions({
             function: [
-                node("function_declaration", (node) => ({
+                map(node("function_declaration"), (node) => ({
                     function: node,
                     definition: node.children[0],
                     inputs: node.children[1].children.map((parameter) => parameter.children[0]),
@@ -249,13 +300,13 @@ export const kotlin = treesitterLanguage({
                             : node.children[2],
                 })),
             ],
-            returnValue: [node("return_expression", (node) => node.children[0])],
+            returnValue: [map(node("return_expression"), (node) => node.children[0])],
             functionType,
             voidType: unitType,
         }),
         features.functionCalls({
             call: [
-                node("call_expression", (callNode) => ({
+                map(node("call_expression"), (callNode) => ({
                     function: callNode.children[0],
                     inputs: callNode.children[1].children.map((node) => node.children[0]),
                     call: callNode,
@@ -265,7 +316,7 @@ export const kotlin = treesitterLanguage({
         }),
         features.fields({
             field: [
-                node("navigation_expression", (node) => ({
+                map(node("navigation_expression"), (node) => ({
                     object: node.children[0],
                     field: node.children[1],
                     access: node,
@@ -274,7 +325,7 @@ export const kotlin = treesitterLanguage({
         }),
         features.arrays({
             array: [
-                node("collection_literal", (node) => ({
+                map(node("collection_literal"), (node) => ({
                     array: node,
                     elements: node.children,
                 })),
@@ -283,7 +334,7 @@ export const kotlin = treesitterLanguage({
         }),
         features.arrayIndexes({
             indexes: [
-                node("index_expression", (node) => ({
+                map(node("index_expression"), (node) => ({
                     array: node.children[0],
                     index: node.children[1],
                     element: node,
@@ -294,7 +345,7 @@ export const kotlin = treesitterLanguage({
         }),
         features.ifExpression({
             if: [
-                node("if_expression", (node) => ({
+                map(node("if_expression"), (node) => ({
                     condition: node.children[0],
                     then: node.children[1],
                     else: node.children[2],
@@ -305,19 +356,19 @@ export const kotlin = treesitterLanguage({
         }),
         features.typeAnnotations({
             typeAnnotation: [
-                node("parameter", (parameter) => ({
+                map(node("parameter"), (parameter) => ({
                     value: parameter.children[0],
                     annotatedType: parameter.children[1],
                     annotation: parameter,
                 })),
-                node("property_declaration", (assignment) => ({
+                map(node("property_declaration"), (assignment) => ({
                     value: assignment.children[0].children[0],
                     annotatedType: assignment.children[0].children[1],
                     annotation: assignment.children[0],
                 })),
             ],
             type: [
-                node("user_type", (node) => (node.children.length === 1 ? node : undefined)),
+                map(node("user_type"), (node) => (node.children.length === 1 ? node : undefined)),
                 node("integral_type"),
                 node("floating_point_type"),
                 node("boolean_type"),
@@ -326,7 +377,7 @@ export const kotlin = treesitterLanguage({
         }),
         features.forEachLoops({
             forEachLoop: [
-                node("for_statement", (node) => ({
+                map(node("for_statement"), (node) => ({
                     array: node.children[1],
                     element: node.children[0].children[0],
                     loop: node,

@@ -46,4 +46,4 @@
     });
 </script>
 
-<img src={tagImage} alt="" class="mx-auto my-[10px] block size-[0.75in]" />
+<img src={tagImage} alt="" class="mx-auto mt-[20px] mb-[10px] block size-[1.25in]" />

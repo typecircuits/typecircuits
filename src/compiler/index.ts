@@ -3,6 +3,7 @@ import treeSitterWasmUrl from "web-tree-sitter/web-tree-sitter.wasm?url";
 import { isConstructedType, type ConstructedType, type Type } from "./solver/type";
 import { Solver, type Group } from "./solver/solve";
 import type { Show } from "@/App.svelte";
+import type { Selector, SelectorValue } from "./selector";
 
 await treesitter.Parser.init({ locateFile: () => treeSitterWasmUrl });
 
@@ -100,27 +101,7 @@ export interface Replacement {
 export type { Group } from "./solver/solve";
 export type { Type, ConstructedType } from "./solver/type";
 
-export type Selector<T> = (node: Node, callback: (value: T) => void) => void;
-
-type SelectorValue<S> = S extends Selector<infer T> ? T : never;
-
-export const node =
-    <T = Node>(type: string | undefined, value?: (node: Node) => T | undefined): Selector<T> =>
-    (node, callback) => {
-        if (node.type === type) {
-            const result = value != null ? value(node) : (node as T);
-
-            if (result != null) {
-                callback(result);
-            }
-        }
-    };
-
-export const event =
-    <E extends string, T>(type: E, selector: Selector<T>): Selector<{ type: E; value: T }> =>
-    (node, callback) => {
-        selector(node, (value) => callback({ type, value }));
-    };
+export * from "./selector";
 
 export type Feature = (context: Context) => void;
 

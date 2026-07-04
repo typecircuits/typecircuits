@@ -1,6 +1,6 @@
 import treesitterPythonUrl from "tree-sitter-python/tree-sitter-python.wasm?url";
 import { python as pythonExtension } from "@codemirror/lang-python";
-import { node, treesitterLanguage } from "@/compiler";
+import { map, node, treesitterLanguage } from "@/compiler";
 import * as features from "@/compiler/features";
 
 const intType = features.makePrimitiveType("int");
@@ -59,16 +59,16 @@ export const python = treesitterLanguage({
     features: [
         features.nameResolution({
             definitions: [
-                node("assignment", (node) => [
+                map(node("assignment"), (node) => [
                     {
                         definition: node.children[0],
                         value: node.children.at(-1), // handle type annotations
                     },
                 ]),
-                node("parameters", (node) =>
+                map(node("parameters"), (node) =>
                     node.children.map((parameter) => ({ definition: parameter })),
                 ),
-                node("function_definition", (node) => [{ definition: node.children[0] }]),
+                map(node("function_definition"), (node) => [{ definition: node.children[0] }]),
             ],
             scopes: [node("function_definition"), node("for_statement")],
             names: [node("identifier")],
@@ -92,7 +92,7 @@ export const python = treesitterLanguage({
         }),
         features.builtinMathOperators({
             operator: [
-                node("binary_operator", (node) => [
+                map(node("binary_operator"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -110,7 +110,7 @@ export const python = treesitterLanguage({
         }),
         features.builtinComparisonOperators({
             operator: [
-                node("comparison_operator", (node) => [
+                map(node("comparison_operator"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -123,7 +123,7 @@ export const python = treesitterLanguage({
         }),
         features.builtinLogicOperators({
             operator: [
-                node("boolean_operator", (node) => [
+                map(node("boolean_operator"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -135,20 +135,20 @@ export const python = treesitterLanguage({
         }),
         features.functions({
             function: [
-                node("function_definition", (node) => ({
+                map(node("function_definition"), (node) => ({
                     function: node,
                     definition: node.children[0],
                     inputs: node.children[1].children,
                     output: node.children.length > 3 ? node.children[2] : undefined,
                 })),
             ],
-            returnValue: [node("return_statement", (node) => node.children[0])],
+            returnValue: [map(node("return_statement"), (node) => node.children[0])],
             functionType,
             voidType: noneType,
         }),
         features.functionCalls({
             call: [
-                node("call", (callNode) => ({
+                map(node("call"), (callNode) => ({
                     function: callNode.children[0],
                     inputs: callNode.children[1].children,
                     call: callNode,
@@ -158,7 +158,7 @@ export const python = treesitterLanguage({
         }),
         features.arrays({
             array: [
-                node("list", (node) => ({
+                map(node("list"), (node) => ({
                     array: node,
                     elements: node.children,
                 })),
@@ -167,7 +167,7 @@ export const python = treesitterLanguage({
         }),
         features.arrayIndexes({
             indexes: [
-                node("subscript", (node) => ({
+                map(node("subscript"), (node) => ({
                     array: node.children[0],
                     index: node.children[1],
                     element: node,
@@ -178,7 +178,7 @@ export const python = treesitterLanguage({
         }),
         features.ifExpression({
             if: [
-                node("if_statement", (node) => ({
+                map(node("if_statement"), (node) => ({
                     condition: node.children[0],
                     // Treat single-statement `if` branches as values
                     then:
@@ -191,7 +191,7 @@ export const python = treesitterLanguage({
                             : undefined,
                     output: node,
                 })),
-                node("conditional_expression", (node) => ({
+                map(node("conditional_expression"), (node) => ({
                     condition: node.children[1],
                     then: node.children[0],
                     else: node.children[2],
@@ -202,12 +202,12 @@ export const python = treesitterLanguage({
         }),
         features.typeAnnotations({
             typeAnnotation: [
-                node("typed_parameter", (parameter) => ({
+                map(node("typed_parameter"), (parameter) => ({
                     value: parameter.children[0],
                     annotatedType: parameter.children[1],
                     annotation: parameter,
                 })),
-                node("assignment", (assignment) => ({
+                map(node("assignment"), (assignment) => ({
                     value: assignment.children[0],
                     annotatedType:
                         assignment.children.length > 2 ? assignment.children[1] : undefined,
@@ -218,7 +218,7 @@ export const python = treesitterLanguage({
         }),
         features.forEachLoops({
             forEachLoop: [
-                node("for_statement", (node) => ({
+                map(node("for_statement"), (node) => ({
                     array: node.children[1],
                     element: node.children[0],
                     loop: node,

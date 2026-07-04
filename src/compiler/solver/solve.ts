@@ -67,7 +67,7 @@ export class Solver {
 
             // First resolve each overload on a copy to avoid interfering with
             // existing types if it doesn't unify
-            let candidates: [Node, Type][][] = [];
+            let candidate: [Node, Type][] | undefined;
             overloads: for (const constraints of overloads) {
                 const copy = new Solver(this.context);
                 copy.unionFind = new UnionFind(this.unionFind);
@@ -81,20 +81,18 @@ export class Solver {
                     }
                 }
 
-                candidates.push(constraints);
+                // Found a matching overload, stop searching
+                candidate = constraints;
+                break overloads;
             }
 
-            // Use the first candidate as a fallback
-            if (candidates.length === 0) {
-                candidates = [overloads[0]];
+            // Use the first overload as a fallback
+            if (candidate == undefined) {
+                candidate = overloads[0];
             }
 
-            // Now apply each candidate. If there are multiple candidates, the
-            // nodes will have multiple (conflicting) types
-            for (const constraints of candidates) {
-                for (const [node, type] of constraints) {
-                    this.unify(node, type);
-                }
+            for (const [node, type] of candidate) {
+                this.unify(node, type);
             }
         }
     }

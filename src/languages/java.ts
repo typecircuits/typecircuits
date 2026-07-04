@@ -1,6 +1,6 @@
 import treesitterJavaUrl from "tree-sitter-java/tree-sitter-java.wasm?url";
 import { java as javaExtension } from "@codemirror/lang-java";
-import { node, treesitterLanguage } from "@/compiler";
+import { map, node, treesitterLanguage } from "@/compiler";
 import * as features from "@/compiler/features";
 
 const intType = features.makePrimitiveType("int");
@@ -56,22 +56,22 @@ export const java = treesitterLanguage({
     features: [
         features.nameResolution({
             definitions: [
-                node("variable_declarator", (node) => [
+                map(node("variable_declarator"), (node) => [
                     {
                         definition: node.children[0],
                         value: node.children[1],
                     },
                 ]),
-                node("assignment_expression", (node) => [
+                map(node("assignment_expression"), (node) => [
                     {
                         definition: node.children[0],
                         value: node.children[1],
                     },
                 ]),
-                node("parameters", (node) =>
+                map(node("parameters"), (node) =>
                     node.children.map((parameter) => ({ definition: parameter })),
                 ),
-                node("function_definition", (node) => [{ definition: node.children[0] }]),
+                map(node("function_definition"), (node) => [{ definition: node.children[0] }]),
             ],
             scopes: [node("function_definition"), node("for_statement")],
             names: [node("identifier")],
@@ -112,7 +112,7 @@ export const java = treesitterLanguage({
         }),
         features.builtinMathOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -130,7 +130,7 @@ export const java = treesitterLanguage({
         }),
         features.builtinComparisonOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -143,7 +143,7 @@ export const java = treesitterLanguage({
         }),
         features.builtinLogicOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -155,20 +155,20 @@ export const java = treesitterLanguage({
         }),
         features.functions({
             function: [
-                node("method_declaration", (node) => ({
+                map(node("method_declaration"), (node) => ({
                     function: node,
                     definition: node.children[1],
                     inputs: node.children[2].children,
                     output: node.children[0],
                 })),
             ],
-            returnValue: [node("return_statement", (node) => node.children[0])],
+            returnValue: [map(node("return_statement"), (node) => node.children[0])],
             functionType,
             voidType: voidType,
         }),
         features.functionCalls({
             call: [
-                node("method_invocation", (callNode) => ({
+                map(node("method_invocation"), (callNode) => ({
                     object: callNode.children.at(-3),
                     function: callNode.children.at(-2)!,
                     inputs: callNode.children.at(-1)!.children,
@@ -179,7 +179,7 @@ export const java = treesitterLanguage({
         }),
         features.fields({
             field: [
-                node("field_access", (node) => ({
+                map(node("field_access"), (node) => ({
                     object: node.children[0],
                     field: node.children[1],
                     access: node,
@@ -188,7 +188,7 @@ export const java = treesitterLanguage({
         }),
         features.arrays({
             array: [
-                node("array_initializer", (node) => ({
+                map(node("array_initializer"), (node) => ({
                     array: node,
                     elements: node.children,
                 })),
@@ -197,7 +197,7 @@ export const java = treesitterLanguage({
         }),
         features.arrayIndexes({
             indexes: [
-                node("array_access", (node) => ({
+                map(node("array_access"), (node) => ({
                     array: node.children[0],
                     index: node.children[1],
                     element: node,
@@ -208,7 +208,7 @@ export const java = treesitterLanguage({
         }),
         features.ifExpression({
             if: [
-                node("if_statement", (node) => ({
+                map(node("if_statement"), (node) => ({
                     condition: node.children[0],
                     // Treat single-statement `if` branches as values
                     then:
@@ -221,7 +221,7 @@ export const java = treesitterLanguage({
                             : undefined,
                     output: node,
                 })),
-                node("ternary_expression", (node) => ({
+                map(node("ternary_expression"), (node) => ({
                     condition: node.children[0],
                     then: node.children[1],
                     else: node.children[2],
@@ -232,21 +232,21 @@ export const java = treesitterLanguage({
         }),
         features.typeAnnotations({
             typeAnnotation: [
-                node("formal_parameter", (parameter) => ({
+                map(node("formal_parameter"), (parameter) => ({
                     value: parameter.children[1],
                     annotatedType: parameter.children[0],
                     annotation: parameter,
                 })),
-                node("local_variable_declaration", (assignment) => ({
+                map(node("local_variable_declaration"), (assignment) => ({
                     value: assignment.children[1].children[0],
                     annotatedType: assignment.children[0],
                     annotation: assignment,
                 })),
-                node("array_type", (node) => ({
+                map(node("array_type"), (node) => ({
                     annotatedType: node,
                     type: (node) => arrayType(node.children[0]),
                 })),
-                node("enhanced_for_statement", (node) => ({
+                map(node("enhanced_for_statement"), (node) => ({
                     value: node.children[1],
                     annotatedType: node.children[0],
                 })),
@@ -261,7 +261,7 @@ export const java = treesitterLanguage({
         }),
         features.forEachLoops({
             forEachLoop: [
-                node("enhanced_for_statement", (node) => ({
+                map(node("enhanced_for_statement"), (node) => ({
                     array: node.children[2],
                     element: node.children[1],
                     loop: node,
@@ -271,7 +271,7 @@ export const java = treesitterLanguage({
         }),
         features.updates({
             update: [
-                node("update_expression", (node) => ({
+                map(node("update_expression"), (node) => ({
                     value: node.children[0],
                     update: node,
                 })),

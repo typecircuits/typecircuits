@@ -1,6 +1,6 @@
 import treesitterCsharpExtension from "tree-sitter-c-sharp/tree-sitter-c_sharp.wasm?url";
 import { csharp as csharpExtension } from "@replit/codemirror-lang-csharp";
-import { node, treesitterLanguage } from "@/compiler";
+import { map, node, treesitterLanguage } from "@/compiler";
 import * as features from "@/compiler/features";
 
 const intType = features.makePrimitiveType("int");
@@ -35,22 +35,22 @@ export const csharp = treesitterLanguage({
     features: [
         features.nameResolution({
             definitions: [
-                node("variable_declaration", (node) => [
+                map(node("variable_declaration"), (node) => [
                     {
                         definition: node.children[1].children[0],
                         value: node.children[1].children[1],
                     },
                 ]),
-                node("assignment_expression", (node) => [
+                map(node("assignment_expression"), (node) => [
                     {
                         definition: node.children[0],
                         value: node.children[1],
                     },
                 ]),
-                node("parameter_list", (node) =>
+                map(node("parameter_list"), (node) =>
                     node.children.map((parameter) => ({ definition: parameter })),
                 ),
-                node("local_function_statement", (node) => [{ definition: node.children[1] }]),
+                map(node("local_function_statement"), (node) => [{ definition: node.children[1] }]),
             ],
             scopes: [
                 node("local_function_statement"),
@@ -77,14 +77,14 @@ export const csharp = treesitterLanguage({
         }),
         features.builtinMathOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
                     node,
                 ]),
                 // C# represents `a * b` as defining a variable `b` of type `a*`
-                node("declaration_expression", (node) => {
+                map(node("declaration_expression"), (node) => {
                     if (node.children.length === 2 && node.children[0].type === "pointer_type") {
                         const left = node.children[0].children[0];
                         const right = node.children[1];
@@ -105,7 +105,7 @@ export const csharp = treesitterLanguage({
         }),
         features.builtinComparisonOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -118,7 +118,7 @@ export const csharp = treesitterLanguage({
         }),
         features.builtinLogicOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -130,26 +130,26 @@ export const csharp = treesitterLanguage({
         }),
         features.functions({
             function: [
-                node("local_function_statement", (node) => ({
+                map(node("local_function_statement"), (node) => ({
                     function: node,
                     definition: node.children[1],
                     inputs: node.children[2].children,
                     output: node.children[0],
                 })),
-                node("method_declaration", (node) => ({
+                map(node("method_declaration"), (node) => ({
                     function: node,
                     definition: node.children[1],
                     inputs: node.children[2].children,
                     output: node.children[0],
                 })),
             ],
-            returnValue: [node("return_statement", (node) => node.children[0])],
+            returnValue: [map(node("return_statement"), (node) => node.children[0])],
             functionType,
             voidType: voidType,
         }),
         features.functionCalls({
             call: [
-                node("invocation_expression", (callNode) => ({
+                map(node("invocation_expression"), (callNode) => ({
                     function: callNode.children[0],
                     inputs: callNode.children[1].children.map((node) => node.children[0]),
                     call: callNode,
@@ -159,7 +159,7 @@ export const csharp = treesitterLanguage({
         }),
         features.fields({
             field: [
-                node("member_access_expression", (node) => ({
+                map(node("member_access_expression"), (node) => ({
                     object: node.children[0],
                     field: node.children[1],
                     access: node,
@@ -168,7 +168,7 @@ export const csharp = treesitterLanguage({
         }),
         features.arrays({
             array: [
-                node("initializer_expression", (node) => ({
+                map(node("initializer_expression"), (node) => ({
                     array: node,
                     elements: node.children,
                 })),
@@ -177,7 +177,7 @@ export const csharp = treesitterLanguage({
         }),
         features.arrayIndexes({
             indexes: [
-                node("element_access_expression", (node) => ({
+                map(node("element_access_expression"), (node) => ({
                     array: node.children[0],
                     index: node.children[1].children[0].children[0],
                     element: node,
@@ -188,7 +188,7 @@ export const csharp = treesitterLanguage({
         }),
         features.ifExpression({
             if: [
-                node("if_statement", (node) => ({
+                map(node("if_statement"), (node) => ({
                     condition: node.children[0],
                     // Treat single-statement `if` branches as values
                     then:
@@ -201,7 +201,7 @@ export const csharp = treesitterLanguage({
                             : undefined,
                     output: node,
                 })),
-                node("conditional_expression", (node) => ({
+                map(node("conditional_expression"), (node) => ({
                     condition: node.children[0],
                     then: node.children[1],
                     else: node.children[2],
@@ -212,27 +212,27 @@ export const csharp = treesitterLanguage({
         }),
         features.typeAnnotations({
             typeAnnotation: [
-                node("parameter", (parameter) => ({
+                map(node("parameter"), (parameter) => ({
                     value: parameter.children[1],
                     annotatedType: parameter.children[0],
                     annotation: parameter,
                 })),
-                node("variable_declaration", (assignment) => ({
+                map(node("variable_declaration"), (assignment) => ({
                     value: assignment.children[1].children[0],
                     annotatedType: assignment.children[0],
                     annotation: assignment,
                 })),
-                node("array_type", (node) => ({
+                map(node("array_type"), (node) => ({
                     annotatedType: node,
                     type: (node) => arrayType(node.children[0]),
                 })),
-                node("foreach_statement", (node) => ({
+                map(node("foreach_statement"), (node) => ({
                     value: node.children[1],
                     annotatedType: node.children[0],
                 })),
             ],
             type: [
-                node("identifier", (node) =>
+                map(node("identifier"), (node) =>
                     node.key === "type" && !node.parent?.type.endsWith("type") ? node : undefined,
                 ),
                 node("predefined_type"),
@@ -240,7 +240,7 @@ export const csharp = treesitterLanguage({
         }),
         features.forEachLoops({
             forEachLoop: [
-                node("foreach_statement", (node) => ({
+                map(node("foreach_statement"), (node) => ({
                     array: node.children[2],
                     element: node.children[1],
                     loop: node,
@@ -250,7 +250,7 @@ export const csharp = treesitterLanguage({
         }),
         features.updates({
             update: [
-                node("postfix_unary_expression", (node) =>
+                map(node("postfix_unary_expression"), (node) =>
                     node.children.length === 1
                         ? {
                               value: node.children[0],

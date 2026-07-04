@@ -1,6 +1,6 @@
 import treesitterJavascriptUrl from "tree-sitter-javascript/tree-sitter-javascript.wasm?url";
 import { javascript as javascriptExtension } from "@codemirror/lang-javascript";
-import { node, treesitterLanguage } from "@/compiler";
+import { map, node, treesitterLanguage } from "@/compiler";
 import * as features from "@/compiler/features";
 
 const numberType = features.makePrimitiveType("number");
@@ -47,22 +47,22 @@ export const javascript = treesitterLanguage({
     features: [
         features.nameResolution({
             definitions: [
-                node("variable_declarator", (node) => [
+                map(node("variable_declarator"), (node) => [
                     {
                         definition: node.children[0],
                         value: node.children[1],
                     },
                 ]),
-                node("assignment_expression", (node) => [
+                map(node("assignment_expression"), (node) => [
                     {
                         definition: node.children[0],
                         value: node.children[1],
                     },
                 ]),
-                node("formal_parameters", (node) =>
+                map(node("formal_parameters"), (node) =>
                     node.children.map((parameter) => ({ definition: parameter })),
                 ),
-                node("function_declaration", (node) => [{ definition: node.children[0] }]),
+                map(node("function_declaration"), (node) => [{ definition: node.children[0] }]),
             ],
             scopes: [node("function_declaration"), node("arrow_function"), node("for_statement")],
             names: [node("identifier"), node("member_expression")],
@@ -86,7 +86,7 @@ export const javascript = treesitterLanguage({
         }),
         features.builtinMathOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -104,7 +104,7 @@ export const javascript = treesitterLanguage({
         }),
         features.builtinComparisonOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -117,7 +117,7 @@ export const javascript = treesitterLanguage({
         }),
         features.builtinLogicOperators({
             operator: [
-                node("binary_expression", (node) => [
+                map(node("binary_expression"), (node) => [
                     node.children[0],
                     node.components[1] as string,
                     node.children[1],
@@ -129,29 +129,29 @@ export const javascript = treesitterLanguage({
         }),
         features.functions({
             function: [
-                node("function_declaration", (node) => ({
+                map(node("function_declaration"), (node) => ({
                     function: node,
                     definition: node.children[0],
                     inputs: node.children[1].children,
                 })),
-                node("function_expression", (node) => ({
+                map(node("function_expression"), (node) => ({
                     function: node,
                     inputs: node.children[0].children,
                 })),
-                node("arrow_function", (node) => ({
+                map(node("arrow_function"), (node) => ({
                     function: node,
                     inputs: node.children[0].children,
                     output:
                         node.children[1].type !== "statement_block" ? node.children[1] : undefined,
                 })),
             ],
-            returnValue: [node("return_statement", (node) => node.children[0])],
+            returnValue: [map(node("return_statement"), (node) => node.children[0])],
             functionType,
             voidType,
         }),
         features.functionCalls({
             call: [
-                node("call_expression", (callNode) => ({
+                map(node("call_expression"), (callNode) => ({
                     function: callNode.children[0],
                     inputs: callNode.children[1].children,
                     call: callNode,
@@ -161,7 +161,7 @@ export const javascript = treesitterLanguage({
         }),
         features.arrays({
             array: [
-                node("array", (node) => ({
+                map(node("array"), (node) => ({
                     array: node,
                     elements: node.children,
                 })),
@@ -170,7 +170,7 @@ export const javascript = treesitterLanguage({
         }),
         features.arrayIndexes({
             indexes: [
-                node("subscript_expression", (node) => ({
+                map(node("subscript_expression"), (node) => ({
                     array: node.children[0],
                     index: node.children[1],
                     element: node,
@@ -181,7 +181,7 @@ export const javascript = treesitterLanguage({
         }),
         features.ifExpression({
             if: [
-                node("if_statement", (node) => ({
+                map(node("if_statement"), (node) => ({
                     condition: node.children[0],
                     // Treat single-statement `if` branches as values
                     then:
@@ -194,7 +194,7 @@ export const javascript = treesitterLanguage({
                             : undefined,
                     output: node,
                 })),
-                node("ternary_expression", (node) => ({
+                map(node("ternary_expression"), (node) => ({
                     condition: node.children[0],
                     then: node.children[1],
                     else: node.children[2],
@@ -205,7 +205,7 @@ export const javascript = treesitterLanguage({
         }),
         features.forEachLoops({
             forEachLoop: [
-                node("for_in_statement", (node) => ({
+                map(node("for_in_statement"), (node) => ({
                     array: node.children[1],
                     element: node.children[0],
                     loop: node,
@@ -215,7 +215,7 @@ export const javascript = treesitterLanguage({
         }),
         features.updates({
             update: [
-                node("update_expression", (node) => ({
+                map(node("update_expression"), (node) => ({
                     value: node.children[0],
                     update: node,
                 })),

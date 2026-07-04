@@ -1,7 +1,7 @@
 import { Node, type Feature, type Selector } from "../index";
 
 export interface ReplaceOptions {
-    replace: Selector<[Node, Node]>[];
+    replace: Selector<[Node, Node | undefined]>[];
 }
 
 export const replace =

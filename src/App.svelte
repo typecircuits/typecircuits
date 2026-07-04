@@ -350,151 +350,150 @@
     };
 </script>
 
-<div
-    class="flex h-screen w-screen flex-col"
-    style:padding={query.fullscreen ? "4px" : "10px"}
-    style:gap={query.fullscreen ? "0" : "10px"}
->
-    <div class="flex flex-row items-center justify-between gap-[10px]">
-        {#if !query.fullscreen}
-            <div class="flex flex-row items-center gap-[10px] font-semibold">
-                {#if query.language != null}
-                    <LanguageDropdown bind:selection={query.language} />
-                {/if}
-            </div>
-        {/if}
-
-        {#if !query.fullscreen || query.errorMessage}
-            <input
-                type="text"
-                placeholder="error message"
-                bind:value={query.errorMessage}
-                class="h-full flex-1 rounded-[10px] text-center font-mono text-sm not-placeholder-shown:border-transparent not-placeholder-shown:bg-red-50 not-placeholder-shown:text-red-500 placeholder-shown:border-black/5"
-                style:font-size={query.fullscreen ? "20pt" : undefined}
-                style:border-width={query.fullscreen ? undefined : "1.5px"}
-            />
-        {/if}
-
-        {#if !query.fullscreen}
-            <div class="flex flex-row items-center gap-[10px]">
-                {#if visualizer != null}
-                    {@const active = nodes != null && nodes.length > 0}
-
-                    <div
-                        class="flex flex-row items-center gap-[10px]"
-                        style:pointer-events={active ? "auto" : "none"}
-                        style:opacity={active ? "1" : "0.5"}
-                    >
-                        <Button onclick={saveImage}>
-                            <Icon>download</Icon>
-                            Save
-                        </Button>
-
-                        <Menu>
-                            <Button>
-                                <Icon>print</Icon>
-                                Print
-                            </Button>
-
-                            {#snippet items()}
-                                <MenuButton onclick={() => (printing = {})}>
-                                    <Icon>draft</Icon>
-                                    Standard
-                                </MenuButton>
-
-                                <MenuButton onclick={() => (printing = { trackers: true })}>
-                                    <Icon>qr_code_scanner</Icon>
-                                    With Trackers
-                                </MenuButton>
-                            {/snippet}
-                        </Menu>
-
-                        <Button onclick={onscan}>
-                            <Icon>qr_code_scanner</Icon>
-                            Scan
-                        </Button>
-                    </div>
-                {/if}
-
-                <Button onclick={() => document.body.requestFullscreen()}>
-                    <Icon>tv</Icon>
-                    Project
-                </Button>
-            </div>
-        {/if}
-    </div>
-
-    <div
-        class="relative flex min-h-0 flex-1 flex-col lg:flex-row"
-        style:gap={query.fullscreen ? "0" : "10px"}
-    >
-        {#if !query.fullscreen}
-            <div
-                class={[
-                    "flex flex-1 resize-none border-black/5 font-mono focus:outline-blue-500 lg:max-w-[500px]",
-                    query.fullscreen ? "" : "rounded-lg border-[1.5px]",
-                ]}
-            >
-                {#if query.language}
-                    <Editor
-                        language={query.language}
-                        bind:code={query.code}
-                        bind:selections={query.selections}
-                        {highlightedRanges}
-                        fullscreen={query.fullscreen}
-                        onshowexamples={() => (showExamples = true)}
-                    />
-                {/if}
-            </div>
-        {/if}
-
-        <div
-            class={[
-                "flex flex-2 flex-col border-black/5",
-                query.fullscreen ? "" : "rounded-lg border-[1.5px]",
-            ]}
-        >
-            {#if query.debug}
-                <div class="flex-1 border-b-[1.5px] border-black/5 p-4">
-                    {#if compileResult?.root != null}
-                        <pre>{compiler.debugTree(compileResult.root)}</pre>
-                    {/if}
-                </div>
-            {/if}
-
-            <div class="flex-1">
-                <Visualizer
-                    bind:this={visualizer}
-                    debug={query.debug}
-                    preview={query.preview}
-                    {compileResult}
-                    bind:show={query.show}
-                    bind:selections={query.selections}
-                    bind:hiddenNodes={query.hiddenNodes}
-                    bind:selectedGroup
-                />
-            </div>
-        </div>
-    </div>
-</div>
-
 {#if nodes != null && printing != null}
     <PrintView
-        code={query.code}
         errorMessage={query.errorMessage}
         options={printing}
         {nodes}
         onfinish={() => (printing = undefined)}
     />
-{/if}
+{:else}
+    <div
+        class="flex h-screen w-screen flex-col"
+        style:padding={query.fullscreen ? "4px" : "10px"}
+        style:gap={query.fullscreen ? "0" : "10px"}
+    >
+        <div class="flex flex-row items-center justify-between gap-[10px]">
+            {#if !query.fullscreen}
+                <div class="flex flex-row items-center gap-[10px] font-semibold">
+                    {#if query.language != null}
+                        <LanguageDropdown bind:selection={query.language} />
+                    {/if}
+                </div>
+            {/if}
 
-{#if showExamples && query.language != null}
-    <Modal width="800px" height="650px" onclose={oncloseexamples}>
-        <Examples
-            bind:language={query.language}
-            {resolvedLanguage}
-            onclick={onclickexample}
-            onclose={oncloseexamples}
-        />
-    </Modal>
+            {#if !query.fullscreen || query.errorMessage}
+                <input
+                    type="text"
+                    placeholder="error message"
+                    bind:value={query.errorMessage}
+                    class="h-full flex-1 rounded-[10px] text-center font-mono text-sm not-placeholder-shown:border-transparent not-placeholder-shown:bg-red-50 not-placeholder-shown:text-red-500 placeholder-shown:border-black/5"
+                    style:font-size={query.fullscreen ? "20pt" : undefined}
+                    style:border-width={query.fullscreen ? undefined : "1.5px"}
+                />
+            {/if}
+
+            {#if !query.fullscreen}
+                <div class="flex flex-row items-center gap-[10px]">
+                    {#if visualizer != null}
+                        {@const active = nodes != null && nodes.length > 0}
+
+                        <div
+                            class="flex flex-row items-center gap-[10px]"
+                            style:pointer-events={active ? "auto" : "none"}
+                            style:opacity={active ? "1" : "0.5"}
+                        >
+                            <Button onclick={saveImage}>
+                                <Icon>download</Icon>
+                                Save
+                            </Button>
+
+                            <Menu>
+                                <Button>
+                                    <Icon>print</Icon>
+                                    Print
+                                </Button>
+
+                                {#snippet items()}
+                                    <MenuButton onclick={() => (printing = {})}>
+                                        <Icon>draft</Icon>
+                                        Standard
+                                    </MenuButton>
+
+                                    <MenuButton onclick={() => (printing = { trackers: true })}>
+                                        <Icon>qr_code_scanner</Icon>
+                                        With Trackers
+                                    </MenuButton>
+                                {/snippet}
+                            </Menu>
+
+                            <Button onclick={onscan}>
+                                <Icon>qr_code_scanner</Icon>
+                                Scan
+                            </Button>
+                        </div>
+                    {/if}
+
+                    <Button onclick={() => document.body.requestFullscreen()}>
+                        <Icon>tv</Icon>
+                        Project
+                    </Button>
+                </div>
+            {/if}
+        </div>
+
+        <div
+            class="relative flex min-h-0 flex-1 flex-col lg:flex-row"
+            style:gap={query.fullscreen ? "0" : "10px"}
+        >
+            {#if !query.fullscreen}
+                <div
+                    class={[
+                        "flex flex-1 resize-none border-black/5 font-mono focus:outline-blue-500 lg:max-w-[500px]",
+                        query.fullscreen ? "" : "rounded-lg border-[1.5px]",
+                    ]}
+                >
+                    {#if query.language}
+                        <Editor
+                            language={query.language}
+                            bind:code={query.code}
+                            bind:selections={query.selections}
+                            {highlightedRanges}
+                            fullscreen={query.fullscreen}
+                            onshowexamples={() => (showExamples = true)}
+                        />
+                    {/if}
+                </div>
+            {/if}
+
+            <div
+                class={[
+                    "flex flex-2 flex-col border-black/5",
+                    query.fullscreen ? "" : "rounded-lg border-[1.5px]",
+                ]}
+            >
+                {#if query.debug}
+                    <div class="flex-1 border-b-[1.5px] border-black/5 p-4">
+                        {#if compileResult?.root != null}
+                            <pre>{compiler.debugTree(compileResult.root)}</pre>
+                        {/if}
+                    </div>
+                {/if}
+
+                <div class="flex-1">
+                    <Visualizer
+                        bind:this={visualizer}
+                        debug={query.debug}
+                        preview={query.preview}
+                        {compileResult}
+                        bind:show={query.show}
+                        bind:selections={query.selections}
+                        bind:hiddenNodes={query.hiddenNodes}
+                        bind:selectedGroup
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#if showExamples && query.language != null}
+        <Modal width="800px" height="650px" onclose={oncloseexamples}>
+            <Examples
+                bind:language={query.language}
+                {resolvedLanguage}
+                onclick={onclickexample}
+                onclose={oncloseexamples}
+            />
+        </Modal>
+    {/if}
 {/if}

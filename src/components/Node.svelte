@@ -83,7 +83,7 @@
             class="block w-full text-center whitespace-nowrap"
             style:font-size="{fontSize}px"
             style:font-family={nodeLabelFontFamily}
-            style:margin-top={height == null ? `-${nodePaddingY}px` : "-0.25lh"}
+            style:margin-top={height == null ? undefined : "-0.25lh"}
         >
             {data.node.toString()}
         </code>
