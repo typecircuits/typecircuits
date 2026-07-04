@@ -154,7 +154,8 @@ export const kotlin = treesitterLanguage({
                 map(node("callable_reference"), (node) => [node, node.children[0]]),
                 // Negative number literals
                 map(node("unary_expression"), (node) =>
-                    node.children[0].type === "number_literal"
+                    node.children[0].type === "number_literal" ||
+                    node.children[0].type === "float_literal"
                         ? [node.children[0], undefined]
                         : undefined,
                 ),
