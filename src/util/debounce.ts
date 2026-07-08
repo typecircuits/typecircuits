@@ -1,7 +1,7 @@
-export const debounce = (timeout: number, f: () => void) => {
+export const debounce = <Args extends any[]>(timeout: number, f: (...args: Args) => void) => {
     let timeoutId: number;
-    return () => {
+    return (...args: Args) => {
         window.clearTimeout(timeoutId);
-        timeoutId = window.setTimeout(f, timeout);
+        timeoutId = window.setTimeout(() => f(...args), timeout);
     };
 };

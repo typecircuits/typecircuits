@@ -1,7 +1,7 @@
 import { Node, type Feature, type Selector, event } from "../index";
 
 export interface NameResolutionOptions {
-    definitions: Selector<{ definition: Node; value?: Node }[]>[];
+    definitions: Selector<{ definition: Node; value?: Record<string, Node> }[]>[];
     scopes: Selector<Node>[];
     names: Selector<Node>[];
     ignore: string[];
@@ -51,9 +51,9 @@ export const nameResolution =
                         if (!scope.has(name)) scope.set(name, []);
                         scope.get(name)!.push(definition);
 
-                        if (value != null) {
-                            context.edge(value, definition, "value");
-                            context.group(definition, value);
+                        if (value != null && definition.type in value) {
+                            context.edge(value[definition.type], definition, "value");
+                            context.group(definition, value[definition.type]);
                         }
                     }
 

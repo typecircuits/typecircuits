@@ -59,13 +59,13 @@ export const java = treesitterLanguage({
                 map(node("variable_declarator"), (node) => [
                     {
                         definition: node.children[0],
-                        value: node.children[1],
+                        value: { identifier: node.children[1] },
                     },
                 ]),
                 map(node("assignment_expression"), (node) => [
                     {
                         definition: node.children[0],
-                        value: node.children[1],
+                        value: { identifier: node.children[1] },
                     },
                 ]),
                 map(node("parameters"), (node) =>

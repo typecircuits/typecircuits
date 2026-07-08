@@ -38,13 +38,13 @@ export const csharp = treesitterLanguage({
                 map(node("variable_declaration"), (node) => [
                     {
                         definition: node.children[1].children[0],
-                        value: node.children[1].children[1],
+                        value: { identifier: node.children[1].children[1] },
                     },
                 ]),
                 map(node("assignment_expression"), (node) => [
                     {
                         definition: node.children[0],
-                        value: node.children[1],
+                        value: { identifier: node.children[1] },
                     },
                 ]),
                 map(node("parameter_list"), (node) =>

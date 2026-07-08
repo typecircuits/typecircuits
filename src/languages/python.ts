@@ -62,7 +62,7 @@ export const python = treesitterLanguage({
                 map(node("assignment"), (node) => [
                     {
                         definition: node.children[0],
-                        value: node.children.at(-1), // handle type annotations
+                        value: { identifier: node.children.at(-1) }, // handle type annotations
                     },
                 ]),
                 map(node("parameters"), (node) =>

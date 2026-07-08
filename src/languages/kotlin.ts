@@ -123,26 +123,33 @@ export const kotlin = treesitterLanguage({
                 map(node("property_declaration"), (node) => [
                     {
                         definition: node.children[0].children[0],
-                        value: node.children[1],
+                        value: { identifier: node.children[1] },
                     },
                 ]),
                 map(node("assignment"), (node) => [
                     {
                         definition: node.children[0],
-                        value: node.children[1],
+                        value: { identifier: node.children[1] },
                     },
                 ]),
                 map(node("function_value_parameters"), (node) =>
                     node.children.map((parameter) => ({ definition: parameter.children[0] })),
                 ),
                 map(node("function_declaration"), (node) => [{ definition: node.children[0] }]),
+                map(node("class_declaration"), (node) => [
+                    {
+                        definition: node.children.find((node) => node.type === "identifier")!,
+                        value: {
+                            user_type: node,
+                            identifier: node.children.find(
+                                (node) => node.type === "primary_constructor",
+                            )!,
+                        },
+                    },
+                ]),
             ],
             scopes: [node("function_declaration"), node("for_statement"), node("block")],
-            names: [
-                map(node("identifier"), (node) =>
-                    node.parent?.type === "user_type" ? undefined : node,
-                ),
-            ],
+            names: [node("identifier"), node("user_type")],
             ignore: [
                 ...Object.keys(builtinFunctions),
                 ...Object.keys(builtinFields),
@@ -362,6 +369,11 @@ export const kotlin = treesitterLanguage({
                     annotatedType: parameter.children[1],
                     annotation: parameter,
                 })),
+                map(node("class_parameter"), (parameter) => ({
+                    value: parameter.children[0],
+                    annotatedType: parameter.children[1],
+                    annotation: parameter,
+                })),
                 map(node("property_declaration"), (assignment) => ({
                     value: assignment.children[0].children[0],
                     annotatedType: assignment.children[0].children[1],
@@ -385,6 +397,43 @@ export const kotlin = treesitterLanguage({
                 })),
             ],
             arrayType: listType,
+        }),
+        features.typeDefinitions({
+            typeDefinitions: [
+                map(node("class_declaration"), (node) => {
+                    const constructor = node.children.find(
+                        (node) => node.type === "primary_constructor",
+                    );
+
+                    return {
+                        definition: node,
+                        constructors:
+                            constructor != null
+                                ? [
+                                      {
+                                          node: constructor,
+                                          parameters: constructor.children[0].children.map(
+                                              (parameter) => parameter.children[0],
+                                          ),
+                                      },
+                                  ]
+                                : [],
+                    };
+                }),
+            ],
+            type: (node) => {
+                const interfaceNode = node.children.find(
+                    (node) => node.type === "delegation_specifiers",
+                )?.children[0]?.children[0];
+
+                if (interfaceNode != null) {
+                    return interfaceNode;
+                }
+
+                const name = node.children.find((node) => node.type === "identifier")!.text;
+                return features.makeNamedType({ display: (name) => name })(name, []);
+            },
+            functionType,
         }),
     ],
 });

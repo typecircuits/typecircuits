@@ -7,4 +7,5 @@ export * from "./loops";
 export * from "./name-resolution";
 export * from "./replace";
 export * from "./type-annotations";
+export * from "./type-definitions";
 export * from "./updates";

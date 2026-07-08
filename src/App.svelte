@@ -151,13 +151,14 @@
 
     let compileResult = $state<compiler.CompileResult>();
 
+    const compile = debounce(250, (language: compiler.ResolvedLanguage) => {
+        compileResult = language.compile(query.code, query.show);
+    });
+
     $effect(() => {
         query.code;
         $state.snapshot(query.show); // react to each option
-
-        resolvedLanguage?.then((language) => {
-            compileResult = language.compile(query.code, query.show);
-        });
+        resolvedLanguage?.then(compile);
     });
 
     const filter = $derived(selectionFilter(query.selections, query.hiddenNodes));
@@ -181,7 +182,7 @@
         );
     });
 
-    const update = debounce(50, async () => {
+    const update = debounce(250, async () => {
         if (query.language == null) return;
 
         const url = new URL(window.location.href);
