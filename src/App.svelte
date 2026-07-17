@@ -341,6 +341,7 @@
                     .map((node) => nodes.indexOf(node))
                     .toArray(),
             )
+            .filter((group) => group.length > 0)
             .toArray();
 
         const data = { cards, groups };
