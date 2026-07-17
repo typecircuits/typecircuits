@@ -37,20 +37,22 @@ export const csharp = treesitterLanguage({
             definitions: [
                 map(node("variable_declaration"), (node) => [
                     {
-                        definition: node.children[1].children[0],
-                        value: { identifier: node.children[1].children[1] },
+                        definition: node.children()[1].child("name")!,
+                        value: { identifier: node.children()[1].children()[1] },
                     },
                 ]),
                 map(node("assignment_expression"), (node) => [
                     {
-                        definition: node.children[0],
-                        value: { identifier: node.children[1] },
+                        definition: node.child("left")!,
+                        value: { identifier: node.child("right")! },
                     },
                 ]),
                 map(node("parameter_list"), (node) =>
-                    node.children.map((parameter) => ({ definition: parameter })),
+                    node.children().map((parameter) => ({ definition: parameter })),
                 ),
-                map(node("local_function_statement"), (node) => [{ definition: node.children[1] }]),
+                map(node("local_function_statement"), (node) => [
+                    { definition: node.child("name")! },
+                ]),
             ],
             scopes: [
                 node("local_function_statement"),
@@ -71,23 +73,26 @@ export const csharp = treesitterLanguage({
         }),
         features.builtinFunctions({
             call: [node("invocation_expression")],
-            function: (node) => [node.children[0], node.children[0].text],
-            inputs: (node) => node.children[1].children,
+            function: (node) => [node.child("function")!, node.child("function")!.text],
+            inputs: (node) => node.child("arguments")!.children(),
             functions: builtinFunctions,
         }),
         features.builtinMathOperators({
             operator: [
                 map(node("binary_expression"), (node) => [
-                    node.children[0],
-                    node.components[1] as string,
-                    node.children[1],
+                    node.child("left")!,
+                    node.string("operator")!,
+                    node.child("right")!,
                     node,
                 ]),
                 // C# represents `a * b` as defining a variable `b` of type `a*`
                 map(node("declaration_expression"), (node) => {
-                    if (node.children.length === 2 && node.children[0].type === "pointer_type") {
-                        const left = node.children[0].children[0];
-                        const right = node.children[1];
+                    if (
+                        node.children().length === 2 &&
+                        node.child("type")!.type === "pointer_type"
+                    ) {
+                        const left = node.child("type")!.child("type")!;
+                        const right = node.child("name")!;
 
                         return [left, "*", right, node];
                     } else {
@@ -106,22 +111,34 @@ export const csharp = treesitterLanguage({
         features.builtinComparisonOperators({
             operator: [
                 map(node("binary_expression"), (node) => [
-                    node.children[0],
-                    node.components[1] as string,
-                    node.children[1],
+                    node.child("left")!,
+                    node.string("operator")!,
+                    node.child("right")!,
                     node,
                 ]),
             ],
-            operators: ["==", "!=", "<", "<=", ">", ">="],
+            operators: ["<", "<=", ">", ">="],
             comparisonTypes: [intType, doubleType, stringType, boolType],
+            booleanType: boolType,
+        }),
+        features.builtinEqualityOperators({
+            operator: [
+                map(node("binary_expression"), (node) => [
+                    node.child("left")!,
+                    node.string("operator")!,
+                    node.child("right")!,
+                    node,
+                ]),
+            ],
+            operators: ["==", "!="],
             booleanType: boolType,
         }),
         features.builtinLogicOperators({
             operator: [
                 map(node("binary_expression"), (node) => [
-                    node.children[0],
-                    node.components[1] as string,
-                    node.children[1],
+                    node.child("left")!,
+                    node.string("operator")!,
+                    node.child("right")!,
                     node,
                 ]),
             ],
@@ -132,26 +149,29 @@ export const csharp = treesitterLanguage({
             function: [
                 map(node("local_function_statement"), (node) => ({
                     function: node,
-                    definition: node.children[1],
-                    inputs: node.children[2].children,
-                    output: node.children[0],
+                    definition: node.child("name")!,
+                    inputs: node.child("parameters")!.children(),
+                    output: node.child("type")!,
                 })),
                 map(node("method_declaration"), (node) => ({
                     function: node,
-                    definition: node.children[1],
-                    inputs: node.children[2].children,
-                    output: node.children[0],
+                    definition: node.child("name")!,
+                    inputs: node.child("parameters")!.children(),
+                    output: node.child("returns")!,
                 })),
             ],
-            returnValue: [map(node("return_statement"), (node) => node.children[0])],
+            returnValue: [map(node("return_statement"), (node) => node.children()[0])],
             functionType,
             voidType: voidType,
         }),
         features.functionCalls({
             call: [
                 map(node("invocation_expression"), (callNode) => ({
-                    function: callNode.children[0],
-                    inputs: callNode.children[1].children.map((node) => node.children[0]),
+                    function: callNode.child("function")!,
+                    inputs: callNode
+                        .child("arguments")!
+                        .children()
+                        .map((node) => node.children()[0]),
                     call: callNode,
                 })),
             ],
@@ -160,8 +180,8 @@ export const csharp = treesitterLanguage({
         features.fields({
             field: [
                 map(node("member_access_expression"), (node) => ({
-                    object: node.children[0],
-                    field: node.children[1],
+                    object: node.child("expression")!,
+                    field: node.child("name")!,
                     access: node,
                 })),
             ],
@@ -170,7 +190,7 @@ export const csharp = treesitterLanguage({
             array: [
                 map(node("initializer_expression"), (node) => ({
                     array: node,
-                    elements: node.children,
+                    elements: node.children(),
                 })),
             ],
             arrayType,
@@ -178,8 +198,8 @@ export const csharp = treesitterLanguage({
         features.arrayIndexes({
             indexes: [
                 map(node("element_access_expression"), (node) => ({
-                    array: node.children[0],
-                    index: node.children[1].children[0].children[0],
+                    array: node.child("expression")!,
+                    index: node.child("subscript")!.children()[0].children()[0],
                     element: node,
                 })),
             ],
@@ -189,22 +209,22 @@ export const csharp = treesitterLanguage({
         features.ifExpression({
             if: [
                 map(node("if_statement"), (node) => ({
-                    condition: node.children[0],
+                    condition: node.child("condition")!,
                     // Treat single-statement `if` branches as values
                     then:
-                        node.children[1].children.length === 1
-                            ? node.children[1].children[0].children[0]
+                        node.child("consequence")!.children().length === 1
+                            ? node.child("consequence")!.children()[0].children()[0]
                             : undefined,
                     else:
-                        node.children[2]?.children[0].children.length === 1
-                            ? node.children[2].children[0].children[0].children[0]
+                        node.child("alternative")?.children()[0].children().length === 1
+                            ? node.child("alternative")!.children()[0].children()[0].children()[0]
                             : undefined,
                     output: node,
                 })),
                 map(node("conditional_expression"), (node) => ({
-                    condition: node.children[0],
-                    then: node.children[1],
-                    else: node.children[2],
+                    condition: node.child("condition")!,
+                    then: node.child("consequence")!,
+                    else: node.child("alternative")!,
                     output: node,
                 })),
             ],
@@ -213,27 +233,29 @@ export const csharp = treesitterLanguage({
         features.typeAnnotations({
             typeAnnotation: [
                 map(node("parameter"), (parameter) => ({
-                    value: parameter.children[1],
-                    annotatedType: parameter.children[0],
+                    value: parameter.child("name")!,
+                    annotatedType: parameter.child("type")!,
                     annotation: parameter,
                 })),
                 map(node("variable_declaration"), (assignment) => ({
-                    value: assignment.children[1].children[0],
-                    annotatedType: assignment.children[0],
+                    value: assignment.children()[1].child("name")!,
+                    annotatedType: assignment.child("type")!,
                     annotation: assignment,
                 })),
                 map(node("array_type"), (node) => ({
                     annotatedType: node,
-                    type: (node) => arrayType(node.children[0]),
+                    type: (node) => arrayType(node.child("type")!),
                 })),
                 map(node("foreach_statement"), (node) => ({
-                    value: node.children[1],
-                    annotatedType: node.children[0],
+                    value: node.child("left")!,
+                    annotatedType: node.child("type")!,
                 })),
             ],
             type: [
                 map(node("identifier"), (node) =>
-                    node.key === "type" && !node.parent?.type.endsWith("type") ? node : undefined,
+                    node.fieldName === "type" && !node.parent?.type.endsWith("type")
+                        ? node
+                        : undefined,
                 ),
                 node("predefined_type"),
             ],
@@ -241,8 +263,8 @@ export const csharp = treesitterLanguage({
         features.forEachLoops({
             forEachLoop: [
                 map(node("foreach_statement"), (node) => ({
-                    array: node.children[2],
-                    element: node.children[1],
+                    array: node.child("right")!,
+                    element: node.child("left")!,
                     loop: node,
                 })),
             ],
@@ -251,9 +273,9 @@ export const csharp = treesitterLanguage({
         features.updates({
             update: [
                 map(node("postfix_unary_expression"), (node) =>
-                    node.children.length === 1
+                    node.children().length === 1
                         ? {
-                              value: node.children[0],
+                              value: node.children()[0],
                               update: node,
                           }
                         : undefined,

@@ -464,7 +464,9 @@
                 ]}
             >
                 {#if query.debug}
-                    <div class="flex-1 border-b-[1.5px] border-black/5 p-4">
+                    <div
+                        class="max-h-1/3 flex-1 overflow-scroll border-b-[1.5px] border-black/5 p-4"
+                    >
                         {#if compileResult?.root != null}
                             <pre>{compiler.debugTree(compileResult.root)}</pre>
                         {/if}

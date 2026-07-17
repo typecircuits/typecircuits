@@ -8,69 +8,92 @@ import type { Selector, SelectorValue } from "./selector";
 await treesitter.Parser.init({ locateFile: () => treeSitterWasmUrl });
 
 export class Node {
-    public id!: string;
-    public startIndex!: number;
-    public endIndex!: number;
-    public type!: string;
-    public text!: string;
-    public children!: Node[];
-    public components!: (string | Node)[];
+    public id = "";
+    public type = "";
+    public text = "";
+    public startIndex = 0;
+    public endIndex = 0;
+    public fields: Record<string, (Node | string)[]> = {};
+    public childNodes: Node[] = [];
     public parent?: Node;
-    public key?: string;
-
-    constructor(options: { [K in keyof Node]: Node[K] }) {
-        Object.assign(this, options);
-    }
+    public fieldName?: string;
 
     toString() {
         return this.text.replace(/\n.*/s, " ⋯");
+    }
+
+    child(fieldName: string): Node | undefined {
+        const value = this.fields[fieldName]?.[0];
+        return value instanceof Node ? value : undefined;
+    }
+
+    string(fieldName: string): string | undefined {
+        const value = this.fields[fieldName]?.[0];
+        return typeof value === "string" ? value : undefined;
+    }
+
+    children(fieldName?: string): Node[] {
+        if (fieldName === undefined) {
+            return this.childNodes;
+        }
+
+        return this.fields[fieldName]?.filter((value) => value instanceof Node) ?? [];
     }
 }
 
 const convertNode = (
     input: treesitter.Node | null | undefined,
     id: { next: number },
-    cache: Map<treesitter.Node, Node> = new Map(),
-): Node | undefined => {
-    if (input == null || !input.isNamed) {
+    cache: Map<number, Node> = new Map(),
+): string | Node | undefined => {
+    if (input == null) {
         return undefined;
     }
 
-    if (cache.has(input)) {
-        return cache.get(input);
+    if (!input.isNamed) {
+        return input.text;
     }
 
-    const indices = new Map<Node, number>();
+    if (cache.has(input.id)) {
+        return cache.get(input.id);
+    }
 
-    const node = new Node({
-        id: `node${id.next++}`,
-        startIndex: input.startIndex,
-        endIndex: input.endIndex,
-        type: input.type,
-        text: input.text,
-        children: input.children
-            .map((node, index) => [index, convertNode(node, id, cache)] as const)
-            .filter(([_, node]) => node != null)
-            .map(([index, node]) => {
-                indices.set(node!, index);
-                return node!;
-            }),
-        components: input.children
-            .filter((node) => node != null)
-            .map((child) => convertNode(child, id, cache) ?? child.text),
+    const nodeId = `node${id.next++}`;
+
+    const childNodes: Node[] = [];
+    const fields: Record<string, (Node | string)[]> = {};
+    input.children.forEach((child, index) => {
+        const node = convertNode(child, id, cache);
+        if (node == null) return;
+
+        if (node instanceof Node) {
+            childNodes.push(node);
+        }
+
+        const fieldName = input.fieldNameForChild(index);
+        if (fieldName != null) {
+            if (node instanceof Node) {
+                node.fieldName = fieldName;
+            }
+
+            (fields[fieldName] ??= []).push(node);
+        }
     });
 
-    cache.set(input, node);
+    const node = new Node();
+    node.id = nodeId;
+    node.startIndex = input.startIndex;
+    node.endIndex = input.endIndex;
+    node.type = input.type;
+    node.text = input.text;
+    node.childNodes = childNodes;
+    node.fields = fields;
 
-    for (const child of node.children) {
+    for (const child of childNodes) {
         child.parent = node;
-
-        const index = indices.get(child);
-        if (index != null) {
-            const fieldName = input.fieldNameForChild(index);
-            child.key = fieldName ?? undefined;
-        }
     }
+
+    cache.set(input.id, node);
 
     return node;
 };
@@ -78,9 +101,13 @@ const convertNode = (
 export const debugTree = (node: Node, indent = 0) => {
     let s = "  ".repeat(indent);
 
+    if (node.fieldName != null) {
+        s += `${node.fieldName}: `;
+    }
+
     s += `(${node.type}) ${node.text}`;
 
-    for (const child of node.children) {
+    for (const child of node.childNodes) {
         s += "\n" + debugTree(child, indent + 1);
     }
 
@@ -135,7 +162,7 @@ export class Context {
     }
 
     atomic(node: Node) {
-        for (const child of node.children) {
+        for (const child of node.childNodes) {
             this.transparent(child);
             this.atomic(child);
         }
@@ -164,18 +191,8 @@ export class Context {
     }
 
     temporary() {
-        const node = new Node({
-            id: "",
-            startIndex: 0,
-            endIndex: 0,
-            type: "",
-            text: "",
-            children: [],
-            components: [],
-        });
-
+        const node = new Node();
         this.transparent(node);
-
         return node;
     }
 
@@ -187,7 +204,7 @@ export class Context {
                 selector(node, callback);
             }
 
-            for (const child of node.children) {
+            for (const child of node.childNodes) {
                 visit(child);
             }
         };
@@ -200,8 +217,8 @@ export class Context {
             return true;
         }
 
-        for (const c of parent.children) {
-            if (this.hasChild(c, child)) {
+        for (const node of parent.childNodes) {
+            if (this.hasChild(node, child)) {
                 return true;
             }
         }
@@ -365,7 +382,7 @@ export const treesitterLanguage = (language: {
                         return undefined;
                     }
 
-                    return compile(convertNode(root, { next: 0 }), language.features, show);
+                    return compile(convertNode(root, { next: 0 }) as Node, language.features, show);
                 },
             };
         },

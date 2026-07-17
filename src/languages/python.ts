@@ -61,14 +61,14 @@ export const python = treesitterLanguage({
             definitions: [
                 map(node("assignment"), (node) => [
                     {
-                        definition: node.children[0],
-                        value: { identifier: node.children.at(-1) }, // handle type annotations
+                        definition: node.child("left")!,
+                        value: { identifier: node.child("right")! }, // handle type annotations
                     },
                 ]),
                 map(node("parameters"), (node) =>
-                    node.children.map((parameter) => ({ definition: parameter })),
+                    node.children().map((parameter) => ({ definition: parameter })),
                 ),
-                map(node("function_definition"), (node) => [{ definition: node.children[0] }]),
+                map(node("function_definition"), (node) => [{ definition: node.child("name")! }]),
             ],
             scopes: [node("function_definition"), node("for_statement")],
             names: [node("identifier")],
@@ -86,16 +86,16 @@ export const python = treesitterLanguage({
         }),
         features.builtinFunctions({
             call: [node("call")],
-            function: (node) => [node.children[0], node.children[0].text],
-            inputs: (node) => node.children[1].children,
+            function: (node) => [node.child("function")!, node.child("function")!.text],
+            inputs: (node) => node.child("arguments")!.children(),
             functions: builtinFunctions,
         }),
         features.builtinMathOperators({
             operator: [
                 map(node("binary_operator"), (node) => [
-                    node.children[0],
-                    node.components[1] as string,
-                    node.children[1],
+                    node.child("left")!,
+                    node.string("operator")!,
+                    node.child("right")!,
                     node,
                 ]),
             ],
@@ -111,22 +111,34 @@ export const python = treesitterLanguage({
         features.builtinComparisonOperators({
             operator: [
                 map(node("comparison_operator"), (node) => [
-                    node.children[0],
-                    node.components[1] as string,
-                    node.children[1],
+                    node.children()[0],
+                    node.string("operators")!,
+                    node.children()[1],
                     node,
                 ]),
             ],
-            operators: ["==", "!=", "<", "<=", ">", ">="],
+            operators: ["<", "<=", ">", ">="],
             comparisonTypes: [intType, floatType, strType, boolType],
+            booleanType: boolType,
+        }),
+        features.builtinEqualityOperators({
+            operator: [
+                map(node("comparison_operator"), (node) => [
+                    node.children()[0],
+                    node.string("operators")!,
+                    node.children()[1],
+                    node,
+                ]),
+            ],
+            operators: ["==", "!="],
             booleanType: boolType,
         }),
         features.builtinLogicOperators({
             operator: [
                 map(node("boolean_operator"), (node) => [
-                    node.children[0],
-                    node.components[1] as string,
-                    node.children[1],
+                    node.child("left")!,
+                    node.string("operator")!,
+                    node.child("right")!,
                     node,
                 ]),
             ],
@@ -137,20 +149,20 @@ export const python = treesitterLanguage({
             function: [
                 map(node("function_definition"), (node) => ({
                     function: node,
-                    definition: node.children[0],
-                    inputs: node.children[1].children,
-                    output: node.children.length > 3 ? node.children[2] : undefined,
+                    definition: node.child("name")!,
+                    inputs: node.child("parameters")!.children(),
+                    output: node.child("return_type"),
                 })),
             ],
-            returnValue: [map(node("return_statement"), (node) => node.children[0])],
+            returnValue: [map(node("return_statement"), (node) => node.children()[0])],
             functionType,
             voidType: noneType,
         }),
         features.functionCalls({
             call: [
                 map(node("call"), (callNode) => ({
-                    function: callNode.children[0],
-                    inputs: callNode.children[1].children,
+                    function: callNode.child("function")!,
+                    inputs: callNode.child("arguments")!.children(),
                     call: callNode,
                 })),
             ],
@@ -160,7 +172,7 @@ export const python = treesitterLanguage({
             array: [
                 map(node("list"), (node) => ({
                     array: node,
-                    elements: node.children,
+                    elements: node.children(),
                 })),
             ],
             arrayType: listType,
@@ -168,8 +180,8 @@ export const python = treesitterLanguage({
         features.arrayIndexes({
             indexes: [
                 map(node("subscript"), (node) => ({
-                    array: node.children[0],
-                    index: node.children[1],
+                    array: node.child("value")!,
+                    index: node.child("subscript")!,
                     element: node,
                 })),
             ],
@@ -179,22 +191,22 @@ export const python = treesitterLanguage({
         features.ifExpression({
             if: [
                 map(node("if_statement"), (node) => ({
-                    condition: node.children[0],
+                    condition: node.child("condition")!,
                     // Treat single-statement `if` branches as values
                     then:
-                        node.children[1].children.length === 1
-                            ? node.children[1].children[0].children[0]
+                        node.child("consequence")!.children().length === 1
+                            ? node.child("consequence")!.children()[0].children()[0]
                             : undefined,
                     else:
-                        node.children[2]?.children[0].children.length === 1
-                            ? node.children[2].children[0].children[0].children[0]
+                        node.child("alternative")?.children()[0].children().length === 1
+                            ? node.child("alternative")!.children()[0].children()[0].children()[0]
                             : undefined,
                     output: node,
                 })),
                 map(node("conditional_expression"), (node) => ({
-                    condition: node.children[1],
-                    then: node.children[0],
-                    else: node.children[2],
+                    condition: node.children()[1],
+                    then: node.children()[0],
+                    else: node.children()[2],
                     output: node,
                 })),
             ],
@@ -203,14 +215,13 @@ export const python = treesitterLanguage({
         features.typeAnnotations({
             typeAnnotation: [
                 map(node("typed_parameter"), (parameter) => ({
-                    value: parameter.children[0],
-                    annotatedType: parameter.children[1],
+                    value: parameter.children()[0],
+                    annotatedType: parameter.child("type")!,
                     annotation: parameter,
                 })),
                 map(node("assignment"), (assignment) => ({
-                    value: assignment.children[0],
-                    annotatedType:
-                        assignment.children.length > 2 ? assignment.children[1] : undefined,
+                    value: assignment.child("left")!,
+                    annotatedType: assignment.child("type"),
                     annotation: assignment,
                 })),
             ],
@@ -219,8 +230,8 @@ export const python = treesitterLanguage({
         features.forEachLoops({
             forEachLoop: [
                 map(node("for_statement"), (node) => ({
-                    array: node.children[1],
-                    element: node.children[0],
+                    array: node.child("right")!,
+                    element: node.child("left")!,
                     loop: node,
                 })),
             ],

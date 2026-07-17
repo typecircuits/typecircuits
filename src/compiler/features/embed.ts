@@ -28,19 +28,15 @@ export const embed =
     (options: EmbedOptions): compiler.Feature =>
     (context) => {
         const nodes = new Map<string, compiler.Node>();
-        for (const node of options.nodes) {
-            nodes.set(
-                node.id,
-                new compiler.Node({
-                    id: node.id,
-                    type: "embedded",
-                    text: node.span.source,
-                    startIndex: node.span.start.index,
-                    endIndex: node.span.end.index,
-                    children: [],
-                    components: [],
-                }),
-            );
+        for (const entry of options.nodes) {
+            const node = new compiler.Node();
+            node.id = entry.id;
+            node.type = "embedded";
+            node.text = entry.span.source;
+            node.startIndex = entry.span.start.index;
+            node.endIndex = entry.span.end.index;
+
+            nodes.set(entry.id, node);
         }
 
         for (const edge of options.edges) {

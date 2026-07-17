@@ -225,6 +225,26 @@ export const builtinComparisonOperators = (options: BuiltinComparisonOperatorsOp
         ),
     });
 
+export interface BuiltinEqualityOperatorsOptions {
+    operator: BuiltinBinaryOperatorSelector[];
+    operators: string[];
+    booleanType: ConstructedType;
+}
+
+export const builtinEqualityOperators = (options: BuiltinEqualityOperatorsOptions) =>
+    builtinBinaryOperators({
+        operator: options.operator,
+        operators: Object.fromEntries(
+            options.operators.map((operator) => [
+                operator,
+                (left, right, output) => ({
+                    groups: [[left, right]],
+                    overloads: [[[output, options.booleanType]]],
+                }),
+            ]),
+        ),
+    });
+
 export interface BuiltinLogicOperatorsOptions {
     operator: BuiltinBinaryOperatorSelector[];
     operators: string[];
