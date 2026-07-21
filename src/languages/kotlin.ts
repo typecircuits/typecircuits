@@ -31,6 +31,10 @@ const builtinFunctions: features.BuiltinFunctionsOptions["functions"] = {
         groups: [inputs], // all elements must have the same type
         overloads: [functionType(inputs, listType(inputs[0] ?? null))],
     }),
+    shouldBe: ([left, right]) => ({
+        groups: [[left, right]],
+        overloads: [functionType([left, right], booleanType)],
+    }),
 };
 
 const builtinFields: features.BuiltinFieldsOptions["fields"] = {
@@ -200,13 +204,19 @@ export const kotlin = treesitterLanguage({
             types: builtinTypes,
         }),
         features.builtinFunctions({
-            call: [node("call_expression")],
-            function: (node) => [node.children()[0], node.children()[0].text],
-            inputs: (node) =>
-                node
-                    .children()[1]
-                    .children()
-                    .map((node) => node.children()[0]),
+            call: [
+                map(node("call_expression"), (node) => ({
+                    function: [node.children()[0], node.children()[0].text],
+                    inputs: node
+                        .children()[1]
+                        .children()
+                        .map((node) => node.children()[0]),
+                })),
+                map(node("infix_expression"), (node) => ({
+                    function: [node.children()[1], node.children()[1].text],
+                    inputs: [node.children()[0], node.children()[2]],
+                })),
+            ],
             functions: builtinFunctions,
         }),
         features.builtinFields({
@@ -345,6 +355,11 @@ export const kotlin = treesitterLanguage({
                         .children()[1]
                         .children()
                         .map((node) => node.children()[0]),
+                    call: callNode,
+                })),
+                map(node("infix_expression"), (callNode) => ({
+                    function: callNode.children()[1],
+                    inputs: [callNode.children()[0], callNode.children()[2]],
                     call: callNode,
                 })),
             ],

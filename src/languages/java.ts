@@ -89,26 +89,21 @@ export const java = treesitterLanguage({
             ],
         }),
         features.builtinFunctions({
-            call: [node("method_invocation"), node("field_access")],
-            function: (node) => {
-                switch (node.type) {
-                    case "method_invocation": {
-                        const name = node.child("name")!;
-                        const object = node.child("object");
-                        const methodName =
-                            object == null ? name.text : `${object.text}.${name.text}`;
-
-                        return [name, methodName];
-                    }
-                    case "field_access": {
-                        return [node.child("field")!, node.child("field")!.text];
-                    }
-                    default: {
-                        return undefined;
-                    }
-                }
-            },
-            inputs: (node) => node.child("arguments")!.children(),
+            call: [
+                map(node("method_invocation"), (node) => ({
+                    function: [
+                        node.child("name")!,
+                        node.child("object") == null
+                            ? node.child("name")!.text
+                            : `${node.child("object")!.text}.${node.child("name")!.text}`,
+                    ],
+                    inputs: node.child("arguments")!.children(),
+                })),
+                map(node("field_access"), (node) => ({
+                    function: [node.child("field")!, node.child("field")!.text],
+                    inputs: [],
+                })),
+            ],
             functions: builtinFunctions,
         }),
         features.builtinMathOperators({

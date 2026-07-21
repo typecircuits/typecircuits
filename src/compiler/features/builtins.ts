@@ -74,9 +74,7 @@ export const builtinTypes =
     };
 
 export interface BuiltinFunctionsOptions {
-    call: Selector<Node>[];
-    function: (node: Node) => [Node, string] | undefined;
-    inputs: (node: Node) => Node[];
+    call: Selector<{ function: [Node, string] | undefined; inputs: Node[] }>[];
     functions: Record<
         string,
         (inputs: Node[], context: Context) => { groups: Node[][]; overloads: ConstructedType[] }
@@ -87,13 +85,10 @@ export const builtinFunctions =
     (options: BuiltinFunctionsOptions): Feature =>
     (context) => {
         context.select(options.call, (callNode) => {
-            const [functionNode, functionName] = options.function(callNode) ?? [];
+            const { function: [functionNode, functionName] = [], inputs } = callNode;
 
             if (functionNode != null && functionName != null && functionName in options.functions) {
-                const { groups, overloads } = options.functions[functionName](
-                    options.inputs(callNode),
-                    context,
-                );
+                const { groups, overloads } = options.functions[functionName](inputs, context);
 
                 for (const group of groups) {
                     context.group(...group);

@@ -73,9 +73,12 @@ export const csharp = treesitterLanguage({
             ],
         }),
         features.builtinFunctions({
-            call: [node("invocation_expression")],
-            function: (node) => [node.child("function")!, node.child("function")!.text],
-            inputs: (node) => node.child("arguments")!.children(),
+            call: [
+                map(node("invocation_expression"), (node) => ({
+                    function: [node.child("function")!, node.child("function")!.text],
+                    inputs: node.child("arguments")!.children(),
+                })),
+            ],
             functions: builtinFunctions,
         }),
         features.builtinMathOperators({

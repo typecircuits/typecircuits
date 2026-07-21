@@ -80,9 +80,12 @@ export const javascript = treesitterLanguage({
             ],
         }),
         features.builtinFunctions({
-            call: [node("call_expression")],
-            function: (node) => [node.child("function")!, node.child("function")!.text],
-            inputs: (node) => node.child("arguments")!.children(),
+            call: [
+                map(node("call_expression"), (node) => ({
+                    function: [node.child("function")!, node.child("function")!.text],
+                    inputs: node.child("arguments")!.children(),
+                })),
+            ],
             functions: builtinFunctions,
         }),
         features.builtinMathOperators({

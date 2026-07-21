@@ -63,6 +63,8 @@ export class Solver {
                 for (const [node, type] of constraints) {
                     this.unify(node, type);
                 }
+
+                continue;
             }
 
             // First resolve each overload on a copy to avoid interfering with
