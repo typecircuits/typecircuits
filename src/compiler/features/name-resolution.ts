@@ -5,6 +5,7 @@ export interface NameResolutionOptions {
     scopes: Selector<Node>[];
     names: Selector<Node>[];
     ignore: string[];
+    implicit: (node: Node) => boolean;
 }
 
 export const nameResolution =
@@ -80,7 +81,7 @@ export const nameResolution =
                     }
 
                     // If the name wasn't resolved, implicitly define it
-                    if (!options.ignore.includes(name)) {
+                    if (!options.ignore.includes(name) && options.implicit(event.value)) {
                         const scope = scopes.at(-1);
                         if (scope != null) {
                             if (!scope.has(name)) scope.set(name, []);

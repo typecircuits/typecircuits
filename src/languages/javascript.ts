@@ -67,6 +67,7 @@ export const javascript = treesitterLanguage({
             scopes: [node("function_declaration"), node("arrow_function"), node("for_statement")],
             names: [node("identifier"), node("member_expression")],
             ignore: Object.keys(builtinFunctions),
+            implicit: () => true,
         }),
         features.builtinLiterals({
             literals: [

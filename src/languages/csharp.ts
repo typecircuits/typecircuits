@@ -61,6 +61,7 @@ export const csharp = treesitterLanguage({
             ],
             names: [node("identifier")],
             ignore: Object.keys(builtinFunctions),
+            implicit: () => true,
         }),
         features.builtinLiterals({
             literals: [

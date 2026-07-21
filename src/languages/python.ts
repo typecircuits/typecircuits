@@ -73,6 +73,7 @@ export const python = treesitterLanguage({
             scopes: [node("function_definition"), node("for_statement")],
             names: [node("identifier")],
             ignore: Object.keys(builtinFunctions),
+            implicit: () => true,
         }),
         features.builtinLiterals({
             literals: [

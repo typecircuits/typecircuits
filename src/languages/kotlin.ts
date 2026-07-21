@@ -149,12 +149,18 @@ export const kotlin = treesitterLanguage({
                 ]),
             ],
             scopes: [node("function_declaration"), node("for_statement"), node("block")],
-            names: [node("identifier"), node("user_type")],
+            names: [
+                map(node("identifier"), (node) =>
+                    node.parent?.type === "user_type" ? undefined : node,
+                ),
+                node("user_type"),
+            ],
             ignore: [
                 ...Object.keys(builtinFunctions),
                 ...Object.keys(builtinFields),
                 ...Object.keys(builtinTypes),
             ],
+            implicit: (node) => node.type !== "user_type",
         }),
         features.replace({
             replace: [
