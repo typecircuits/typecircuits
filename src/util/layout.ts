@@ -1,4 +1,4 @@
-import type * as compiler from "@/compiler";
+import type * as compiler from "@/core/compiler";
 import ELK, { type ElkExtendedEdge, type ElkPort } from "elkjs/lib/elk.bundled";
 
 export const groupSeparation = 100;
@@ -20,7 +20,7 @@ export const layout = async (
 ) => {
     interface GroupData {
         id: string;
-        group: compiler.Group;
+        group: compiler.CompiledGroup;
         children: {
             id: string;
             node: compiler.Node;
@@ -45,9 +45,9 @@ export const layout = async (
         return fontWidth;
     })();
 
-    const nodes = new Set(compileResult.nodes.values().filter(filter));
+    const nodes = new Set(compileResult.nodes.filter(filter));
 
-    const groupData = new Map<compiler.Group, GroupData>();
+    const groupData = new Map<compiler.CompiledGroup, GroupData>();
     for (const group of compileResult.groups) {
         const groupNodes = group.nodes.values().filter(filter).toArray();
 
@@ -76,8 +76,6 @@ export const layout = async (
     for (const [group, { children }] of groupData) {
         if (children.length === 0) {
             groupData.delete(group);
-        } else {
-            children.reverse(); // for layout
         }
     }
 
@@ -87,17 +85,15 @@ export const layout = async (
                 .values()
                 .filter(({ group }) =>
                     compileResult.edges.some(
-                        (edge) => edge.to === node.node && group.nodes.has(edge.from),
+                        (edge) => edge.to === node.node && group.nodes.includes(edge.from),
                     ),
                 )
-                .map(
-                    (group): ElkPort => ({
-                        id: `port_${node.id}_${group.id}`,
-                        layoutOptions: {
-                            "elk.portAlignment.default": "CENTER",
-                        },
-                    }),
-                )
+                .map((group): ElkPort => ({
+                    id: `port_${node.id}_${group.id}`,
+                    layoutOptions: {
+                        "elk.portAlignment.default": "CENTER",
+                    },
+                }))
                 .toArray();
         }
     }
@@ -111,7 +107,7 @@ export const layout = async (
 
     const edgeIds: Set<string> = new Set();
     let edgeData = compileResult.edges.flatMap(({ from: source, to: target }) => {
-        const sourceGroup = compileResult.groups.find((group) => group.nodes.has(source));
+        const sourceGroup = compileResult.groups.find((group) => group.nodes.includes(source));
         if (!nodes.has(source) || !nodes.has(target) || sourceGroup == null) {
             return [];
         }

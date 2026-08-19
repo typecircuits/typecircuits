@@ -35,10 +35,6 @@ body {
     }
 }
 
-[data-presentation-mode] .hide-in-presentation-mode {
-    display: none;
-}
-
 @utility bg-lines {
     background: repeating-linear-gradient(
         -45deg,

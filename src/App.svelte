@@ -1,6 +1,4 @@
 <script module lang="ts">
-    const imageSize = 1500;
-
     export type Show = typeof defaultShow;
 
     export const defaultShow = {
@@ -13,13 +11,7 @@
         (selections: [number, number][], hiddenNodes: string[]) => (node: compiler.Node) =>
             !hiddenNodes.includes(node.id) &&
             (selections.length === 0 ||
-                selections.some(
-                    ([from, to]) =>
-                        node.startIndex != null &&
-                        node.startIndex >= from &&
-                        node.endIndex != null &&
-                        node.endIndex <= to,
-                ));
+                selections.some(([from, to]) => node.pos.start >= from && node.pos.end <= to));
 
     const stringifySelections = (selections: [number, number][]) =>
         selections.map(([start, end]) => `${start}-${end}`).join(",");
@@ -35,107 +27,92 @@
 
 <script lang="ts">
     import Editor from "@/components/Editor.svelte";
-    import * as compiler from "@/compiler";
-    import { embeddedLanguage, languages as languages } from "@/languages";
+    import type * as compiler from "@/core/compiler";
+    import { makeCompiler } from "@/core/compiler";
+    import { allLanguages, embeddedLanguage, getLanguage, type Language } from "@/core/languages";
     import Button from "@/components/Button.svelte";
     import Icon from "./components/Icon.svelte";
     import { onMount } from "svelte";
-    import { toCanvas } from "html-to-image";
-    import PrintView, { type PrintOptions } from "./components/PrintView.svelte";
-    import Visualizer from "./components/Visualizer.svelte";
+    import PrintView from "./components/PrintView.svelte";
     import Examples from "./components/Examples.svelte";
     import { debounce } from "./util/debounce";
     import type { Example } from "./examples";
     import Modal from "./components/Modal.svelte";
-    import LanguageDropdown from "./components/LanguageDropdown.svelte";
-    import { getViewportForBounds } from "@xyflow/svelte";
-    import Menu from "./components/Menu.svelte";
-    import MenuButton from "./components/MenuButton.svelte";
+    import Dropdown from "./components/Dropdown.svelte";
+    import { allVisualizers, type VisualizerBindings } from "./visualizers";
+    import { context, getFilteredNodes } from "./context.svelte";
 
-    const query = $state(
-        (() => {
-            const result = {
-                embed: false,
-                fullscreen: false,
-                preview: false,
-                debug: false,
-                language: undefined as compiler.Language | undefined,
-                code: "",
-                errorMessage: "",
-                selections: [] as [number, number][],
-                hiddenNodes: [] as string[],
-                show: defaultShow,
-            };
+    onMount(() => {
+        const query = new URLSearchParams(window.location.search);
 
-            const query = new URLSearchParams(window.location.search);
+        if (query.has("embed")) {
+            context.embed = true;
+            context.fullscreen = true;
+            return;
+        }
 
-            if (query.has("embed")) {
-                result.embed = true;
-                result.fullscreen = true;
-                return result;
+        if (query.has("preview")) {
+            context.preview = true;
+        }
+
+        if (query.has("fullscreen")) {
+            context.fullscreen = true;
+        }
+
+        if (query.has("language")) {
+            const name = query.get("language")!;
+            context.language = getLanguage(name);
+        }
+
+        context.language ??= allLanguages[0];
+
+        if (query.has("visualizer")) {
+            const name = query.get("visualizer")!;
+            context.visualizer = name;
+        }
+
+        context.visualizer ??= Object.keys(allVisualizers)[0];
+
+        if (query.has("code")) {
+            context.code = query.get("code")!;
+        }
+
+        if (query.has("selections")) {
+            context.selections = parseSelections(query.get("selections")!);
+        }
+
+        if (query.has("hidden")) {
+            context.hiddenNodes = query.get("hidden")!.split(",");
+        }
+
+        if (query.has("errorMessage")) {
+            context.errorMessage = query.get("errorMessage")!;
+        }
+
+        if (query.has("show")) {
+            for (const key in defaultShow) {
+                context.show[key as keyof Show] = false;
             }
 
-            if (query.has("preview")) {
-                result.preview = true;
-            }
-
-            if (query.has("debug")) {
-                result.debug = true;
-            }
-
-            if (query.has("fullscreen")) {
-                result.fullscreen = true;
-            }
-
-            if (query.has("language")) {
-                const name = query.get("language")!;
-                result.language = languages.find((language) => language.name === name);
-            }
-
-            result.language ??= languages[0];
-
-            if (query.has("code")) {
-                result.code = query.get("code")!;
-            }
-
-            if (query.has("selections")) {
-                result.selections = parseSelections(query.get("selections")!);
-            }
-
-            if (query.has("hidden")) {
-                result.hiddenNodes = query.get("hidden")!.split(",");
-            }
-
-            if (query.has("errorMessage")) {
-                result.errorMessage = query.get("errorMessage")!;
-            }
-
-            if (query.has("show")) {
-                for (const key in defaultShow) {
-                    result.show[key as keyof Show] = false;
-                }
-
-                for (const entry of query.get("show")!.split(",")) {
-                    if (entry in result.show) {
-                        result.show[entry as keyof Show] = true;
-                    }
+            for (const entry of query.get("show")!.split(",")) {
+                if (entry in context.show) {
+                    context.show[entry as keyof Show] = true;
                 }
             }
-
-            return result;
-        })(),
-    );
+        }
+    });
 
     $effect(() => {
-        if (!query.embed) return;
+        if (!context.embed) return;
 
         let setShow = false;
         window.addEventListener("message", (event) => {
             if (typeof event.data === "object" && "embed" in event.data) {
-                query.language = embeddedLanguage("embed", event.data.embed);
+                context.language = embeddedLanguage;
+                context.code = JSON.stringify(event.data.embed);
 
                 if (!setShow) {
-                    Object.assign(query.show, event.data.show);
+                    Object.assign(context.show, event.data.show);
                     setShow = true;
                 }
             }
@@ -144,64 +121,65 @@
         window.parent.postMessage("requestEmbed", "*");
     });
 
-    let visualizer = $state<Visualizer>();
-    let selectedGroup = $state<compiler.Group>();
+    let Visualizer = $derived(context.visualizer ? allVisualizers[context.visualizer] : undefined);
+    let visualizer = $state<VisualizerBindings<any>>();
+    let selectedGroup = $state<compiler.CompiledGroup>();
 
-    const resolvedLanguage = $derived(query.language?.init());
+    const compile = debounce(250, async (language: Language<unknown>) => {
+        const parsed = await language.parse(context.code);
+        if (parsed == null) {
+            context.compileResult = undefined;
+            return;
+        }
 
-    let compileResult = $state<compiler.CompileResult>();
-
-    const compile = debounce(250, (language: compiler.ResolvedLanguage) => {
-        compileResult = language.compile(query.code, query.show);
+        const compiler = makeCompiler({ show: context.show });
+        await language.compile(parsed, compiler);
+        context.compileResult = compiler.finish();
     });
 
     $effect(() => {
-        query.code;
-        $state.snapshot(query.show); // react to each option
-        resolvedLanguage?.then(compile);
+        context.code;
+        $state.snapshot(context.show); // react to each option
+        if (context.language != null) {
+            compile(context.language);
+        }
     });
 
-    const filter = $derived(selectionFilter(query.selections, query.hiddenNodes));
-
-    const nodes = $derived(compileResult?.nodes.values().filter(filter).toArray());
-
     const highlightedRanges = $derived.by(() => {
-        if (compileResult == null || selectedGroup == null) {
+        if (context.compileResult == null || selectedGroup == null) {
             return [];
         }
 
         return (
             selectedGroup.nodes
                 .values()
-                .flatMap((node): [number, number][] =>
-                    node.startIndex != null && node.endIndex != null
-                        ? [[node.startIndex, node.endIndex]]
-                        : [],
-                )
+                .map((node): [number, number] => [node.pos.start, node.pos.end])
                 .toArray() ?? []
         );
     });
 
     const update = debounce(250, async () => {
-        if (query.language == null) return;
+        if (context.language == null) return;
 
         const url = new URL(window.location.href);
 
-        if (query.debug) url.searchParams.set("debug", "1");
+        url.searchParams.set("language", context.language.name);
 
-        url.searchParams.set("language", query.language.name);
+        if (context.visualizer != null) {
+            url.searchParams.set("visualizer", context.visualizer);
+        }
 
-        url.searchParams.set("code", query.code);
+        url.searchParams.set("code", context.code);
 
-        url.searchParams.set("errorMessage", query.errorMessage);
+        url.searchParams.set("errorMessage", context.errorMessage);
 
-        url.searchParams.set("selections", stringifySelections(query.selections));
+        url.searchParams.set("selections", stringifySelections(context.selections));
 
-        url.searchParams.set("hidden", query.hiddenNodes.join(","));
+        url.searchParams.set("hidden", context.hiddenNodes.join(","));
 
         url.searchParams.set(
             "show",
-            Object.entries(query.show)
+            Object.entries(context.show)
                 .filter(([_, enabled]) => enabled)
                 .map(([key]) => key)
                 .join(","),
@@ -211,218 +189,108 @@
     });
 
     $effect(() => {
-        if (query.embed) return;
+        if (context.embed) return;
 
-        query.language;
-        query.code;
-        query.errorMessage;
-        $state.snapshot(query.selections);
-        $state.snapshot(query.hiddenNodes);
-        $state.snapshot(query.show);
+        context.language;
+        context.visualizer;
+        context.code;
+        context.errorMessage;
+        $state.snapshot(context.selections);
+        $state.snapshot(context.hiddenNodes);
+        $state.snapshot(context.show);
 
         update();
     });
 
-    let prevCode = query.code;
+    let prevCode = context.code;
     $effect(() => {
-        if (query.embed || query.code === prevCode) return;
+        if (context.embed || context.code === prevCode) return;
 
         selectedGroup = undefined;
-        query.hiddenNodes = [];
+        context.hiddenNodes = [];
 
-        prevCode = query.code;
+        prevCode = context.code;
     });
-
-    const saveImage = async () => {
-        if (!visualizer) return;
-
-        const nodesBounds = visualizer.getNodesBounds()!;
-        const aspectRatio = nodesBounds.height / nodesBounds.width;
-        const viewport = getViewportForBounds(
-            nodesBounds,
-            imageSize,
-            imageSize * aspectRatio,
-            -Infinity,
-            Infinity,
-            0.5,
-        );
-
-        const viewportElement = document.querySelector<HTMLElement>(".svelte-flow__viewport")!;
-
-        const canvas = await toCanvas(viewportElement, {
-            width: imageSize,
-            height: imageSize * aspectRatio,
-            style: {
-                width: `${imageSize}px`,
-                height: `${imageSize * aspectRatio}px`,
-                transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
-            },
-        });
-
-        // Crop canvas to content
-
-        let minX = imageSize;
-        let maxX = 0;
-        let minY = imageSize * aspectRatio;
-        let maxY = 0;
-        const imageData = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height);
-        for (let y = 0; y < imageData.height; y++) {
-            for (let x = 0; x < imageData.width; x++) {
-                const index = (y * imageData.width + x) * 4;
-
-                const alpha = imageData.data[index + 3];
-                if (alpha === 0) {
-                    continue;
-                }
-
-                minX = Math.min(minX, x);
-                maxX = Math.max(maxX, x);
-                minY = Math.min(minY, y);
-                maxY = Math.max(maxY, y);
-            }
-        }
-
-        const croppedCanvas = document.createElement("canvas");
-        croppedCanvas.width = maxX - minX;
-        croppedCanvas.height = maxY - minY;
-        const ctx = croppedCanvas.getContext("2d")!;
-        ctx.drawImage(
-            canvas,
-            minX,
-            minY,
-            croppedCanvas.width,
-            croppedCanvas.height,
-            0,
-            0,
-            croppedCanvas.width,
-            croppedCanvas.height,
-        );
-
-        // Save as image
-
-        const link = document.createElement("a");
-        link.href = croppedCanvas.toDataURL();
-        link.download = `typecircuits-${Date.now()}.png`;
-        link.click();
-    };
-
-    let printing = $state<PrintOptions>();
 
     onMount(() => {
         document.addEventListener("fullscreenchange", (e) => {
-            query.fullscreen = document.fullscreenElement != null;
+            context.fullscreen = document.fullscreenElement != null;
         });
     });
 
     let showExamples = $state(false);
 
     const onclickexample = (example: Example) => {
-        query.code = example.code;
-        query.selections = example.selections ?? [];
-        query.errorMessage = example.errorMessage ?? "";
+        context.code = example.code;
+        context.selections = example.selections ?? [];
+        context.errorMessage = example.errorMessage ?? "";
         showExamples = false;
-        query.show = { ...defaultShow, ...example.show };
+        context.show = { ...defaultShow, ...example.show };
     };
 
     const oncloseexamples = () => {
         showExamples = false;
     };
 
-    const onscan = () => {
-        if (compileResult == null || nodes == null) return;
-
-        const cards = nodes.map((node) => node.toString());
-
-        const groups = Iterator.from(compileResult.groups)
-            .map((group) =>
-                group.nodes
-                    .values()
-                    .filter(filter)
-                    .map((node) => nodes.indexOf(node))
-                    .toArray(),
-            )
-            .filter((group) => group.length > 0)
-            .toArray();
-
-        const data = { cards, groups };
-
-        const url = new URL(import.meta.env.VITE_SCAN_URL);
-        url.searchParams.set("data", JSON.stringify(data));
-        window.open(url.toString(), "_blank");
-    };
+    let filteredNodes = $derived(getFilteredNodes());
 </script>
 
-{#if nodes != null && printing != null}
+{#if filteredNodes != null && context.printing != null}
     <PrintView
-        errorMessage={query.errorMessage}
-        options={printing}
-        {nodes}
-        onfinish={() => (printing = undefined)}
+        errorMessage={context.errorMessage}
+        options={context.printing}
+        nodes={filteredNodes}
+        onfinish={() => (context.printing = undefined)}
     />
 {:else}
     <div
         class="flex h-screen w-screen flex-col"
-        style:padding={query.fullscreen ? "4px" : "10px"}
-        style:gap={query.fullscreen ? "0" : "10px"}
+        style:padding={context.fullscreen ? "4px" : "10px"}
+        style:gap={context.fullscreen ? "0" : "10px"}
     >
         <div class="flex flex-row items-center justify-between gap-[10px]">
-            {#if !query.fullscreen}
+            {#if !context.fullscreen}
                 <div class="flex flex-row items-center gap-[10px] font-semibold">
-                    {#if query.language != null}
-                        <LanguageDropdown bind:selection={query.language} />
+                    {#if context.language != null}
+                        <Dropdown
+                            options={allLanguages}
+                            optionName={(language) => language.name}
+                            bind:selection={context.language}
+                        />
+                    {/if}
+
+                    {#if context.visualizer != null}
+                        <Dropdown
+                            options={Object.keys(allVisualizers)}
+                            optionName={(key) => key}
+                            bind:selection={context.visualizer}
+                        />
                     {/if}
                 </div>
             {/if}
 
-            {#if !query.fullscreen || query.errorMessage}
+            {#if !context.fullscreen || context.errorMessage}
                 <input
                     type="text"
                     placeholder="error message"
-                    bind:value={query.errorMessage}
+                    bind:value={context.errorMessage}
                     class="h-full flex-1 rounded-[10px] text-center font-mono text-sm not-placeholder-shown:border-transparent not-placeholder-shown:bg-red-50 not-placeholder-shown:text-red-500 placeholder-shown:border-black/5"
-                    style:font-size={query.fullscreen ? "20pt" : undefined}
-                    style:border-width={query.fullscreen ? undefined : "1.5px"}
+                    style:font-size={context.fullscreen ? "20pt" : undefined}
+                    style:border-width={context.fullscreen ? undefined : "1.5px"}
                 />
             {/if}
 
-            {#if !query.fullscreen}
+            {#if !context.fullscreen}
                 <div class="flex flex-row items-center gap-[10px]">
-                    {#if visualizer != null}
-                        {@const active = nodes != null && nodes.length > 0}
+                    {#if visualizer?.toolbar != null && visualizer.toolbarProps != null}
+                        {@const active = filteredNodes != null && filteredNodes.length > 0}
 
                         <div
                             class="flex flex-row items-center gap-[10px]"
                             style:pointer-events={active ? "auto" : "none"}
                             style:opacity={active ? "1" : "0.5"}
                         >
-                            <Button onclick={saveImage}>
-                                <Icon>download</Icon>
-                                Save
-                            </Button>
-
-                            <Menu>
-                                <Button>
-                                    <Icon>print</Icon>
-                                    Print
-                                </Button>
-
-                                {#snippet items()}
-                                    <MenuButton onclick={() => (printing = {})}>
-                                        <Icon>draft</Icon>
-                                        Standard
-                                    </MenuButton>
-
-                                    <MenuButton onclick={() => (printing = { trackers: true })}>
-                                        <Icon>qr_code_scanner</Icon>
-                                        With Trackers
-                                    </MenuButton>
-                                {/snippet}
-                            </Menu>
-
-                            <Button onclick={onscan}>
-                                <Icon>qr_code_scanner</Icon>
-                                Scan
-                            </Button>
+                            <visualizer.toolbar {...visualizer.toolbarProps} />
                         </div>
                     {/if}
 
@@ -436,22 +304,22 @@
 
         <div
             class="relative flex min-h-0 flex-1 flex-col lg:flex-row"
-            style:gap={query.fullscreen ? "0" : "10px"}
+            style:gap={context.fullscreen ? "0" : "10px"}
         >
-            {#if !query.fullscreen}
+            {#if !context.fullscreen}
                 <div
                     class={[
                         "flex flex-1 resize-none border-black/5 font-mono focus:outline-blue-500 lg:max-w-[500px]",
-                        query.fullscreen ? "" : "rounded-lg border-[1.5px]",
+                        context.fullscreen ? "" : "rounded-lg border-[1.5px]",
                     ]}
                 >
-                    {#if query.language}
+                    {#if context.language}
                         <Editor
-                            language={query.language}
-                            bind:code={query.code}
-                            bind:selections={query.selections}
+                            language={context.language}
+                            bind:code={context.code}
+                            bind:selections={context.selections}
                             {highlightedRanges}
-                            fullscreen={query.fullscreen}
+                            fullscreen={context.fullscreen}
                             onshowexamples={() => (showExamples = true)}
                         />
                     {/if}
@@ -461,28 +329,17 @@
             <div
                 class={[
                     "flex flex-2 flex-col border-black/5",
-                    query.fullscreen ? "" : "rounded-lg border-[1.5px]",
+                    context.fullscreen ? "" : "rounded-lg border-[1.5px]",
                 ]}
             >
-                {#if query.debug}
-                    <div
-                        class="max-h-1/3 flex-1 overflow-scroll border-b-[1.5px] border-black/5 p-4"
-                    >
-                        {#if compileResult?.root != null}
-                            <pre>{compiler.debugTree(compileResult.root)}</pre>
-                        {/if}
-                    </div>
-                {/if}
-
-                <div class="flex-1">
+                <div class="size-full flex-1">
                     <Visualizer
                         bind:this={visualizer}
-                        debug={query.debug}
-                        preview={query.preview}
-                        {compileResult}
-                        bind:show={query.show}
-                        bind:selections={query.selections}
-                        bind:hiddenNodes={query.hiddenNodes}
+                        compileResult={context.compileResult}
+                        preview={context.preview}
+                        bind:show={context.show}
+                        selections={context.selections}
+                        hiddenNodes={context.hiddenNodes}
                         bind:selectedGroup
                     />
                 </div>
@@ -490,14 +347,9 @@
         </div>
     </div>
 
-    {#if showExamples && query.language != null}
+    {#if showExamples && context.language != null}
         <Modal width="800px" height="650px" onclose={oncloseexamples}>
-            <Examples
-                bind:language={query.language}
-                {resolvedLanguage}
-                onclick={onclickexample}
-                onclose={oncloseexamples}
-            />
+            <Examples onclick={onclickexample} onclose={oncloseexamples} />
         </Modal>
     {/if}
 {/if}

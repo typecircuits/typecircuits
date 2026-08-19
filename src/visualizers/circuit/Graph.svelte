@@ -18,16 +18,14 @@
     import Node from "./Node.svelte";
     import Edge from "./Edge.svelte";
     import { groupLabelHeight, layout } from "@/util/layout";
-    import Icon from "./Icon.svelte";
-    import type * as compiler from "@/compiler";
-    import { displayType } from "@/compiler/solver/type";
+    import Icon from "@/components/Icon.svelte";
+    import type * as compiler from "@/core/compiler";
     import type { Show } from "@/App.svelte";
 
     interface Props {
         context: ReturnType<typeof useSvelteFlow>;
-        debug?: boolean;
         preview?: boolean;
-        selectedGroup: compiler.Group | undefined;
+        selectedGroup: compiler.CompiledGroup | undefined;
         filter: (node: compiler.Node) => boolean;
         show: Show;
         compileResult: compiler.CompileResult;
@@ -36,7 +34,6 @@
 
     let {
         context = $bindable(),
-        debug,
         preview,
         selectedGroup = $bindable(),
         filter,
@@ -69,8 +66,8 @@
                 fitView();
             });
 
-            const groupColors = new Map<compiler.Group, string>();
-            const groupColor = (group: compiler.Group) => {
+            const groupColors = new Map<compiler.CompiledGroup, string>();
+            const groupColor = (group: compiler.CompiledGroup) => {
                 if (group.types.length === 0) {
                     return "var(--color-gray-500)";
                 }
@@ -91,7 +88,7 @@
                         data: {
                             color: groupColor(group),
                             nodes: children.map(({ node }) => node),
-                            labels: group.types.map((type) => displayType(type)),
+                            labels: group.types,
                             conflict: group.conflict,
                             show,
                             onmouseenter: () => {
@@ -116,7 +113,6 @@
                         type: "Node",
                         data: {
                             node,
-                            debug,
                             show,
                             onsetactive: (active: boolean) => {
                                 if (active) {
@@ -159,11 +155,10 @@
                     const { from: source, to: target } = edge;
 
                     const targetGroup = compileResult.groups.find((group) =>
-                        group.nodes.has(target),
+                        group.nodes.includes(target),
                     );
 
                     if (targetGroup == null) {
-                        console.warn("Missing target group for node:", target);
                         return [];
                     }
 

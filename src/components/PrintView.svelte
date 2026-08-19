@@ -5,8 +5,8 @@
 </script>
 
 <script lang="ts">
-    import type * as compiler from "@/compiler";
-    import Node from "./Node.svelte";
+    import type * as compiler from "@/core/compiler";
+    import Node from "@/visualizers/circuit/Node.svelte";
 
     interface Props {
         errorMessage?: string;

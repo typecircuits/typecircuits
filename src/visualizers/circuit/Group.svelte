@@ -1,6 +1,6 @@
 <script lang="ts">
     import { activeNodes } from "./Graph.svelte";
-    import Icon from "./Icon.svelte";
+    import Icon from "@/components/Icon.svelte";
 
     const { data, width, height } = $props();
 

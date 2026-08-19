@@ -22,10 +22,10 @@
     import { tags } from "@lezer/highlight";
     import { onMount } from "svelte";
     import equal from "fast-deep-equal";
-    import type { Language } from "@/compiler";
+    import type { Language } from "@/core/languages";
 
     interface Props {
-        language: Language;
+        language: Language<any>;
         code: string;
         selections: [number, number][];
         highlightedRanges: [number, number][];
@@ -138,9 +138,15 @@
     const languageExtension = new Compartment();
 
     $effect(() => {
-        view.dispatch({
-            effects: languageExtension.reconfigure(language.editorExtensions),
-        });
+        language;
+
+        (async () => {
+            const extensions = (await language.editorExtensions?.()) ?? [];
+
+            view.dispatch({
+                effects: languageExtension.reconfigure(extensions),
+            });
+        })();
     });
 
     const highlightRanges = (ranges: [number, number][], decoration: Decoration) =>

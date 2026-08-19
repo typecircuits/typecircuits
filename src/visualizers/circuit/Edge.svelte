@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type * as compiler from "@/compiler";
+    import type * as compiler from "@/core/compiler";
     import { pathFromPoints } from "@/util/path";
     import { BaseEdge, EdgeLabel, type EdgeProps } from "@xyflow/svelte";
     import type { ElkEdgeSection } from "elkjs/lib/elk-api";

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Handle, Position } from "@xyflow/svelte";
-    import type * as compiler from "@/compiler";
+    import type * as compiler from "@/core/compiler";
     import {
         nodeLabelFontFamily,
         nodeLabelFontSize,
@@ -9,15 +9,14 @@
         nodePaddingY,
     } from "@/util/layout";
     import { activeNodes } from "./Graph.svelte";
-    import Tracker from "./Tracker.svelte";
-    import Menu from "./Menu.svelte";
-    import MenuButton from "./MenuButton.svelte";
-    import Icon from "./Icon.svelte";
+    import Tracker from "@/components/Tracker.svelte";
+    import Menu from "@/components/Menu.svelte";
+    import MenuButton from "@/components/MenuButton.svelte";
+    import Icon from "@/components/Icon.svelte";
 
     interface Props {
         data: {
             node: compiler.Node;
-            debug?: boolean;
             onsetactive?: (active: boolean) => void;
             onhide?: () => void;
         };
@@ -87,12 +86,6 @@
         >
             {data.node.toString()}
         </code>
-
-        {#if data.debug}
-            <code class="absolute inset-x-0 bottom-[4px] text-center text-[6pt] opacity-50">
-                {data.node.type}
-            </code>
-        {/if}
     </div>
 
     {#snippet items()}

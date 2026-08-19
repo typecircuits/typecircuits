@@ -1,29 +1,19 @@
 <script lang="ts">
     import { SvelteFlowProvider, useSvelteFlow } from "@xyflow/svelte";
-    import Graph from "@/components/Graph.svelte";
-    import type * as compiler from "@/compiler";
-    import { selectionFilter, type Show } from "@/App.svelte";
-    import ShowToggles from "./ShowToggles.svelte";
-
-    interface Props {
-        preview?: boolean;
-        debug?: boolean;
-        selections: [number, number][];
-        hiddenNodes: string[];
-        compileResult: compiler.CompileResult | undefined;
-        selectedGroup?: compiler.Group;
-        show: Show;
-    }
+    import Graph from "./Graph.svelte";
+    import ShowToggles from "@/components/ShowToggles.svelte";
+    import type { VisualizerProps } from "..";
+    import CircuitToolbar, { type CircuitToolbarProps } from "./CircuitToolbar.svelte";
+    import { selectionFilter } from "@/App.svelte";
 
     let {
-        preview,
-        debug,
         compileResult,
-        selections = $bindable(),
-        hiddenNodes = $bindable(),
+        preview,
+        show,
+        selections = [],
+        hiddenNodes = [],
         selectedGroup = $bindable(),
-        show = $bindable(),
-    }: Props = $props();
+    }: VisualizerProps = $props();
 
     const keyStyles = {
         Expressions: {
@@ -68,8 +58,11 @@
     });
 
     let svelteFlowContext = $state<ReturnType<typeof useSvelteFlow>>();
-    export const getNodesBounds = () =>
-        svelteFlowContext?.getNodesBounds(svelteFlowContext.getNodes());
+    export const toolbarProps: CircuitToolbarProps = {
+        getNodesBounds: () => svelteFlowContext?.getNodesBounds(svelteFlowContext.getNodes()),
+    };
+
+    export const toolbar = CircuitToolbar;
 </script>
 
 <div class="relative size-full overflow-clip">
@@ -78,7 +71,6 @@
             <SvelteFlowProvider>
                 <Graph
                     bind:context={svelteFlowContext!}
-                    {debug}
                     {preview}
                     bind:selectedGroup
                     filter={selectionFilter(selections, hiddenNodes)}
