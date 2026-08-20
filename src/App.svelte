@@ -109,6 +109,7 @@
         window.addEventListener("message", (event) => {
             if (typeof event.data === "object" && "embed" in event.data) {
                 context.language = embeddedLanguage;
+                context.visualizer = "Circuit";
                 context.code = JSON.stringify(event.data.embed);
 
                 if (!setShow) {
