@@ -80,7 +80,7 @@ export const pythonLanguage: Language<Parser> = {
             | { type: "builtinValue"; constraints: (node: Node) => void }
             | { type: "builtinType"; constraints: (node: Node) => void };
 
-        type NameKind = "field";
+        type NameKind = "field" | "type";
 
         const nameResolver = makeNameResolver<Definition, NameKind>(parser.root);
 
@@ -207,6 +207,10 @@ export const pythonLanguage: Language<Parser> = {
                 const { attribute } = node.fields;
                 nameResolver.setKind(attribute, "field");
             },
+            type: (node) => {
+                const [name] = node.children;
+                nameResolver.setKind(name, "type");
+            },
         });
 
         const traverseIdentifier = (node: Node) => {
@@ -219,13 +223,17 @@ export const pythonLanguage: Language<Parser> = {
             for (const definition of definitions) {
                 switch (definition.type) {
                     case "value": {
-                        compiler.solver.unifyAt(node, [node, definition.node]);
-                        compiler.replaceAt(node, node, definition.node);
+                        if (kind == null) {
+                            compiler.solver.unifyAt(node, [node, definition.node]);
+                            compiler.replaceAt(node, node, definition.node);
+                        }
 
                         break;
                     }
                     case "builtinValue": {
-                        definition.constraints(node);
+                        if (kind == null) {
+                            definition.constraints(node);
+                        }
 
                         break;
                     }
