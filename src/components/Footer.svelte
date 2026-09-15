@@ -25,7 +25,9 @@
 <footer
     class="printing:hidden flex flex-row items-center justify-center gap-[8px] px-[10px] text-sm"
 >
-    {@render link("/", "About")}
+    <span class="font-semibold">
+        {@render link("https://typecircuits.org", "Type Circuits")}
+    </span>
 
     {@render separator()}
 

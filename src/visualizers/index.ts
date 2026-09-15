@@ -7,6 +7,7 @@ import type { Show } from "@/App.svelte";
 export interface VisualizerProps {
     compileResult: compiler.CompileResult | undefined;
     preview: boolean | undefined;
+    embed: boolean | undefined;
     show: Show;
     selections: [number, number][] | undefined;
     hiddenNodes: string[] | undefined;

@@ -9,6 +9,7 @@
     let {
         compileResult,
         preview,
+        embed,
         show,
         selections = [],
         hiddenNodes = [],
@@ -112,7 +113,9 @@
         >
             <ShowToggles bind:show />
         </div>
+    {/if}
 
+    {#if embed}
         <a
             href="https://typecircuits.org"
             target="_blank"

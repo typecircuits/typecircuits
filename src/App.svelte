@@ -339,6 +339,7 @@
                         bind:this={visualizer}
                         compileResult={context.compileResult}
                         preview={context.preview}
+                        embed={context.embed}
                         bind:show={context.show}
                         selections={context.selections}
                         hiddenNodes={context.hiddenNodes}
