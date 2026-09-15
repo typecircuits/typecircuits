@@ -349,7 +349,9 @@
             </div>
         </div>
 
-        <Footer />
+        {#if !context.embed && !context.preview}
+            <Footer />
+        {/if}
     </div>
 
     {#if showExamples && context.language != null}
