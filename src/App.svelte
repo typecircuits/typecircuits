@@ -41,6 +41,7 @@
     import Dropdown from "./components/Dropdown.svelte";
     import { allVisualizers, type VisualizerBindings } from "./visualizers";
     import { context, getFilteredNodes } from "./context.svelte";
+    import Footer from "./components/Footer.svelte";
 
     onMount(() => {
         const query = new URLSearchParams(window.location.search);
@@ -346,6 +347,8 @@
                 </div>
             </div>
         </div>
+
+        <Footer />
     </div>
 
     {#if showExamples && context.language != null}

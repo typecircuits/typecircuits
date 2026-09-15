@@ -39,6 +39,8 @@
         "@fontsource-variable/jetbrains-mono": "^5.2.6",
         "@fontsource-variable/material-symbols-rounded": "^5.2.18",
         "@replit/codemirror-lang-csharp": "^6.2.0",
+        "@sentry/browser": "^10.74.0",
+        "@sentry/vite-plugin": "^5.4.0",
         "@tailwindcss/postcss": "^4.2.2",
         "@tailwindcss/vite": "^4.1.12",
         "@tree-sitter-grammars/tree-sitter-kotlin": "^1.1.0",
