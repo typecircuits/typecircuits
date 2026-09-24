@@ -42,13 +42,15 @@
     import { allVisualizers, type VisualizerBindings } from "./visualizers";
     import { context, getFilteredNodes } from "./context.svelte";
     import Footer from "./components/Footer.svelte";
+    import Menu from "./components/Menu.svelte";
+    import MenuButton from "./components/MenuButton.svelte";
 
     onMount(() => {
         const query = new URLSearchParams(window.location.search);
 
         if (query.has("embed")) {
             context.embed = true;
-            context.fullscreen = true;
+            context.project = "visualization";
             return;
         }
 
@@ -56,8 +58,8 @@
             context.preview = true;
         }
 
-        if (query.has("fullscreen")) {
-            context.fullscreen = true;
+        if (query.has("project")) {
+            context.project = query.get("project") as any;
         }
 
         if (query.has("language")) {
@@ -123,8 +125,18 @@
         window.parent.postMessage("requestEmbed", "*");
     });
 
-    let Visualizer = $derived(context.visualizer ? allVisualizers[context.visualizer] : undefined);
+    const Visualizer = $derived(
+        context.visualizer ? allVisualizers[context.visualizer] : undefined,
+    );
+
     let visualizer = $state<VisualizerBindings<any>>();
+
+    const editorSizes = $derived(
+        context.project === "code"
+            ? { fontSize: "28pt", lineHeight: "2.25" }
+            : { fontSize: "12pt", lineHeight: "1.5" },
+    );
+
     let selectedGroup = $state<compiler.CompiledGroup>();
 
     const compile = debounce(250, async (language: Language<unknown>) => {
@@ -145,19 +157,6 @@
         if (context.language != null) {
             compile(context.language);
         }
-    });
-
-    const highlightedRanges = $derived.by(() => {
-        if (context.compileResult == null || selectedGroup == null) {
-            return [];
-        }
-
-        return (
-            selectedGroup.nodes
-                .values()
-                .map((node): [number, number] => [node.pos.start, node.pos.end])
-                .toArray() ?? []
-        );
     });
 
     const update = debounce(250, async () => {
@@ -214,9 +213,16 @@
         prevCode = context.code;
     });
 
+    const onproject = (value: typeof context.project) => {
+        document.body.requestFullscreen();
+        context.project = value;
+    };
+
     onMount(() => {
         document.addEventListener("fullscreenchange", (e) => {
-            context.fullscreen = document.fullscreenElement != null;
+            if (document.fullscreenElement == null) {
+                context.project = undefined;
+            }
         });
     });
 
@@ -247,11 +253,11 @@
 {:else}
     <div
         class="flex h-screen w-screen flex-col"
-        style:padding={context.fullscreen ? "4px" : "10px"}
-        style:gap={context.fullscreen ? "0" : "10px"}
+        style:padding={context.project != null ? "4px" : "10px"}
+        style:gap={context.project != null ? "0" : "10px"}
     >
         <div class="flex flex-row items-center justify-between gap-[10px]">
-            {#if !context.fullscreen}
+            {#if context.project == null}
                 <div class="flex flex-row items-center gap-[10px] font-semibold">
                     {#if context.language != null}
                         <Dropdown
@@ -271,19 +277,34 @@
                 </div>
             {/if}
 
-            {#if !context.fullscreen || context.errorMessage}
+            {#if context.project == null || context.errorMessage}
                 <input
                     type="text"
                     placeholder="error message"
                     bind:value={context.errorMessage}
                     class="h-full flex-1 rounded-[10px] text-center font-mono text-sm not-placeholder-shown:border-transparent not-placeholder-shown:bg-red-50 not-placeholder-shown:text-red-500 placeholder-shown:border-black/5"
-                    style:font-size={context.fullscreen ? "20pt" : undefined}
-                    style:border-width={context.fullscreen ? undefined : "1.5px"}
+                    style:font-size={context.project != null ? "20pt" : undefined}
+                    style:border-width={context.project != null ? undefined : "1.5px"}
                 />
             {/if}
 
-            {#if !context.fullscreen}
+            {#if context.project == null}
                 <div class="flex flex-row items-center gap-[10px]">
+                    <Menu>
+                        <Button>
+                            <Icon>tv</Icon>
+                            Project
+                        </Button>
+
+                        {#snippet items()}
+                            <MenuButton onclick={() => onproject("code")}>Code</MenuButton>
+
+                            <MenuButton onclick={() => onproject("visualization")}>
+                                Visualization
+                            </MenuButton>
+                        {/snippet}
+                    </Menu>
+
                     {#if visualizer?.toolbar != null && visualizer.toolbarProps != null}
                         {@const active = filteredNodes != null && filteredNodes.length > 0}
 
@@ -295,58 +316,55 @@
                             <visualizer.toolbar {...visualizer.toolbarProps} />
                         </div>
                     {/if}
-
-                    <Button onclick={() => document.body.requestFullscreen()}>
-                        <Icon>tv</Icon>
-                        Project
-                    </Button>
                 </div>
             {/if}
         </div>
 
         <div
             class="relative flex min-h-0 flex-1 flex-col lg:flex-row"
-            style:gap={context.fullscreen ? "0" : "10px"}
+            style:gap={context.project != null ? "0" : "10px"}
         >
-            {#if !context.fullscreen}
+            {#if context.project == null || context.project === "code"}
                 <div
                     class={[
-                        "flex flex-1 resize-none border-black/5 font-mono focus:outline-blue-500 lg:max-w-[500px]",
-                        context.fullscreen ? "" : "rounded-lg border-[1.5px]",
+                        "flex flex-1 resize-none overflow-clip border-[1.5px] border-black/5 font-mono focus:outline-blue-500",
+                        context.project != null
+                            ? "mx-[10vw] my-[5vh] rounded-2xl shadow-lg"
+                            : "rounded-lg lg:max-w-[500px]",
                     ]}
                 >
                     {#if context.language}
                         <Editor
-                            language={context.language}
-                            bind:code={context.code}
-                            bind:selections={context.selections}
-                            {highlightedRanges}
-                            fullscreen={context.fullscreen}
+                            fontSize={editorSizes.fontSize}
+                            lineHeight={editorSizes.lineHeight}
+                            readOnly={context.project === "code"}
                             onshowexamples={() => (showExamples = true)}
                         />
                     {/if}
                 </div>
             {/if}
 
-            <div
-                class={[
-                    "flex flex-2 flex-col border-black/5",
-                    context.fullscreen ? "" : "rounded-lg border-[1.5px]",
-                ]}
-            >
-                <div class="size-full flex-1">
-                    <Visualizer
-                        bind:this={visualizer}
-                        compileResult={context.compileResult}
-                        preview={context.preview}
-                        embed={context.embed}
-                        bind:show={context.show}
-                        selections={context.selections}
-                        hiddenNodes={context.hiddenNodes}
-                        bind:selectedGroup
-                    />
+            {#if context.project == null || context.project === "visualization"}
+                <div
+                    class={[
+                        "flex flex-2 flex-col border-black/5",
+                        context.project != null ? "" : "rounded-lg border-[1.5px]",
+                    ]}
+                >
+                    <div class="size-full flex-1">
+                        <Visualizer
+                            bind:this={visualizer}
+                            compileResult={context.compileResult}
+                            preview={context.preview}
+                            embed={context.embed}
+                            bind:show={context.show}
+                            selections={context.selections}
+                            hiddenNodes={context.hiddenNodes}
+                            bind:selectedGroup
+                        />
+                    </div>
                 </div>
-            </div>
+            {/if}
         </div>
 
         {#if !context.embed && !context.preview}

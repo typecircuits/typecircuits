@@ -155,7 +155,7 @@
                     const { from: source, to: target } = edge;
 
                     const targetGroup = compileResult.groups.find((group) =>
-                        group.nodes.includes(target),
+                        group.displayNodes.includes(target),
                     );
 
                     if (targetGroup == null) {

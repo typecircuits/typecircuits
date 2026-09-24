@@ -13,7 +13,7 @@ export const defaultShow = {
 
 export const context = $state({
     embed: false,
-    fullscreen: false,
+    project: undefined as "code" | "visualization" | undefined,
     preview: false,
     code: "",
     errorMessage: "",
@@ -29,4 +29,4 @@ export const context = $state({
 export const getFilter = () => selectionFilter(context.selections, context.hiddenNodes);
 
 export const getFilteredNodes = () =>
-    context.compileResult?.nodes.values().filter(getFilter()).toArray();
+    context.compileResult?.displayNodes.values().filter(getFilter()).toArray();

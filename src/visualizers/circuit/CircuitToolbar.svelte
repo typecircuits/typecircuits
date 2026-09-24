@@ -98,7 +98,7 @@
 
         const groups = Iterator.from(context.compileResult.groups)
             .map((group) =>
-                group.nodes
+                group.displayNodes
                     .values()
                     .filter(filter)
                     .map((node) => filteredNodes!.indexOf(node))

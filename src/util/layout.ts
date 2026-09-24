@@ -45,11 +45,11 @@ export const layout = async (
         return fontWidth;
     })();
 
-    const nodes = new Set(compileResult.nodes.filter(filter));
+    const nodes = new Set(compileResult.displayNodes.filter(filter));
 
     const groupData = new Map<compiler.CompiledGroup, GroupData>();
     for (const group of compileResult.groups) {
-        const groupNodes = group.nodes.values().filter(filter).toArray();
+        const groupNodes = group.displayNodes.values().filter(filter).toArray();
 
         if (groupNodes.length === 0) continue;
 
@@ -85,7 +85,7 @@ export const layout = async (
                 .values()
                 .filter(({ group }) =>
                     compileResult.edges.some(
-                        (edge) => edge.to === node.node && group.nodes.includes(edge.from),
+                        (edge) => edge.to === node.node && group.displayNodes.includes(edge.from),
                     ),
                 )
                 .map((group): ElkPort => ({
@@ -107,7 +107,9 @@ export const layout = async (
 
     const edgeIds: Set<string> = new Set();
     let edgeData = compileResult.edges.flatMap(({ from: source, to: target }) => {
-        const sourceGroup = compileResult.groups.find((group) => group.nodes.includes(source));
+        const sourceGroup = compileResult.groups.find((group) =>
+            group.displayNodes.includes(source),
+        );
         if (!nodes.has(source) || !nodes.has(target) || sourceGroup == null) {
             return [];
         }

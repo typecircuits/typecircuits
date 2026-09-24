@@ -49,12 +49,14 @@ export interface CompilerOptions {
 export interface CompileResult {
     ast?: () => string;
     nodes: Node[];
+    displayNodes: Node[];
     edges: Edge[];
     groups: CompiledGroup[];
 }
 
 export interface CompiledGroup {
     nodes: Node[];
+    displayNodes: Node[];
     types: string[];
     conflict: boolean;
 }
@@ -145,6 +147,8 @@ export const makeCompiler = (options: CompilerOptions): Compiler => {
             }
 
             const replaceNode = (node: Node | undefined) => {
+                const trace = node != null ? [node] : [];
+
                 const seen = new Set();
                 while (!seen.has(node)) {
                     seen.add(node);
@@ -154,6 +158,10 @@ export const makeCompiler = (options: CompilerOptions): Compiler => {
                     for (const replacement of replacements) {
                         if (replacement.from === node && replacement.to !== replacement.from) {
                             node = replacement.to;
+                            if (node != null) {
+                                trace.push(node);
+                            }
+
                             progress = true;
                         }
                     }
@@ -163,21 +171,43 @@ export const makeCompiler = (options: CompilerOptions): Compiler => {
                     }
                 }
 
-                return node;
+                return { node, trace: node != null ? trace : [] };
             };
 
-            const nodes = [
-                ...new Set(solver.nodes.map(replaceNode).filter((node) => node != null)),
-            ];
-            nodes.sort(compareNodes);
+            const splitNodes = (input: Node[]) => {
+                const nodes = new Set<Node>();
+                const displayNodes = new Set<Node>();
+
+                for (const node of input) {
+                    const replacement = replaceNode(node);
+
+                    for (const node of replacement.trace) {
+                        nodes.add(node);
+                    }
+
+                    if (replacement.node != null) {
+                        displayNodes.add(replacement.node);
+                    }
+                }
+
+                const sortedNodes = [...nodes];
+                sortedNodes.sort(compareNodes);
+
+                const sortedDisplayNodes = [...displayNodes];
+                sortedDisplayNodes.sort(compareNodes);
+
+                return { nodes: sortedNodes, displayNodes: sortedDisplayNodes };
+            };
+
+            const { nodes, displayNodes } = splitNodes(solver.nodes);
 
             // Collapse edges
             let collapsedEdges = [...edges];
             while (true) {
                 let progress = false;
                 collapsedEdges = collapsedEdges.flatMap((edge) => {
-                    const from = replaceNode(edge.from);
-                    const to = replaceNode(edge.to);
+                    const from = replaceNode(edge.from).node;
+                    const to = replaceNode(edge.to).node;
 
                     if (from != null && to != null) {
                         return [{ from, to, label: edge.label }];
@@ -201,13 +231,12 @@ export const makeCompiler = (options: CompilerOptions): Compiler => {
 
             return {
                 ast,
-                nodes: nodes,
+                nodes,
+                displayNodes,
                 edges: collapsedEdges,
                 groups: solver.groups
                     .map((group) => {
-                        const nodes = [
-                            ...new Set(group.nodes.map(replaceNode).filter((node) => node != null)),
-                        ];
+                        const { nodes, displayNodes } = splitNodes(group.nodes);
 
                         const types = group.types.map((type) => solver.renderType(type));
 
@@ -216,7 +245,8 @@ export const makeCompiler = (options: CompilerOptions): Compiler => {
                         }
 
                         return {
-                            nodes,
+                            nodes: [...nodes],
+                            displayNodes: [...displayNodes],
                             types,
                             conflict: types.length > 1,
                         };
