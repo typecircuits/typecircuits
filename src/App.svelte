@@ -50,8 +50,6 @@
 
         if (query.has("embed")) {
             context.embed = true;
-            context.project = "visualization";
-            return;
         }
 
         if (query.has("preview")) {
@@ -132,7 +130,7 @@
     let visualizer = $state<VisualizerBindings<any>>();
 
     const editorSizes = $derived(
-        context.project === "code"
+        context.project === "code" && !context.embed
             ? { fontSize: "28pt", lineHeight: "2.25" }
             : { fontSize: "12pt", lineHeight: "1.5" },
     );
@@ -253,7 +251,7 @@
 {:else}
     <div
         class="flex h-screen w-screen flex-col"
-        style:padding={context.project != null ? "4px" : "10px"}
+        style:padding={context.embed ? "0" : context.project != null ? "4px" : "10px"}
         style:gap={context.project != null ? "0" : "10px"}
     >
         <div class="flex flex-row items-center justify-between gap-[10px]">
@@ -327,10 +325,15 @@
             {#if context.project == null || context.project === "code"}
                 <div
                     class={[
-                        "flex flex-1 resize-none overflow-clip border-[1.5px] border-black/5 font-mono focus:outline-blue-500",
-                        context.project != null
-                            ? "mx-[10vw] my-[5vh] rounded-2xl shadow-lg"
-                            : "rounded-lg lg:max-w-[500px]",
+                        "flex flex-1 resize-none overflow-clip font-mono",
+                        context.embed
+                            ? ""
+                            : [
+                                  "border-[1.5px] border-black/5 focus:outline-blue-500",
+                                  context.project != null
+                                      ? "mx-[10vw] my-[5vh] rounded-2xl shadow-lg"
+                                      : "rounded-lg lg:max-w-[500px]",
+                              ],
                     ]}
                 >
                     {#if context.language}
@@ -364,6 +367,22 @@
                         />
                     </div>
                 </div>
+            {/if}
+
+            {#if context.embed}
+                <a
+                    href="https://typecircuits.org"
+                    target="_blank"
+                    class="absolute right-[10px] bottom-[10px] z-10 flex flex-row items-center justify-center gap-[6px] rounded-lg border-[1.5px] border-black/5 bg-white px-[8px] py-[6px] text-sm shadow-lg shadow-black/2.5 hover:bg-gray-100"
+                >
+                    <img
+                        src="https://typecircuits.org/logo.png"
+                        alt="Type Circuits"
+                        class="size-[20px]"
+                    />
+
+                    <p class="font-medium">Type Circuits</p>
+                </a>
             {/if}
         </div>
 
