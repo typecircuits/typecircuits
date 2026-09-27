@@ -52,6 +52,10 @@
             context.embed = true;
         }
 
+        if (query.has("hideLogo")) {
+            context.hideLogo = true;
+        }
+
         if (query.has("preview")) {
             context.preview = true;
         }
@@ -369,7 +373,7 @@
                 </div>
             {/if}
 
-            {#if context.embed}
+            {#if context.embed && !context.hideLogo}
                 <a
                     href="https://typecircuits.org"
                     target="_blank"

@@ -13,6 +13,7 @@ export const defaultShow = {
 
 export const context = $state({
     embed: false,
+    hideLogo: false,
     project: undefined as "code" | "visualization" | undefined,
     preview: false,
     code: "",
