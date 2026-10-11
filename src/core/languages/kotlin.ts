@@ -458,7 +458,11 @@ export const kotlinLanguage: Language<Parser> = {
             }
         };
 
-        const traverseFunction = (node: Node, parameters: Node[], returnType?: Node) => {
+        const traverseFunction = (
+            node: Node,
+            parameters: Node[],
+            returnValues: (Node | undefined)[],
+        ) => {
             for (const parameter of parameters) {
                 compiler.edge(parameter, node, "input");
             }
@@ -470,8 +474,10 @@ export const kotlinLanguage: Language<Parser> = {
                 hasReturnValue = true;
             };
 
-            if (returnType != null) {
-                traverseReturnValue(returnType);
+            for (const returnValue of returnValues) {
+                if (returnValue != null) {
+                    traverseReturnValue(returnValue);
+                }
             }
 
             parser.traverse(node, {
@@ -644,13 +650,17 @@ export const kotlinLanguage: Language<Parser> = {
             function_declaration: (node) => {
                 const parameters = node.children[1];
 
-                const returnType =
-                    node.children.length === 4 ||
-                    (node.children.length === 3 && node.children[2].type !== "function_body")
-                        ? node.children[2]
-                        : undefined;
+                let returnValues = node.children
+                    .slice(2)
+                    .map((node) =>
+                        node.type === "function_body"
+                            ? node.children[0].type !== "block"
+                                ? node.children[0]
+                                : undefined
+                            : node,
+                    );
 
-                traverseFunction(node, parameters.children, returnType);
+                traverseFunction(node, parameters.children, returnValues);
             },
 
             callable_reference: (node) => {
