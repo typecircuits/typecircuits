@@ -1,5 +1,23 @@
+[build]
+command = "npm run build"
+publish = "app/dist"
+
+[functions]
+directory = "functions/dist/"
+node_bundler = "esbuild"
+external_node_modules = ["core"]
+
+[dev]
+framework = "#static"
+autoLaunch = false
+
 [[headers]]
 for = "/*"
 [headers.values]
 Cross-Origin-Resource-Policy = "cross-origin"
 Cross-Origin-Embedder-Policy = "require-corp"
+
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/api/:splat"
+status = 200

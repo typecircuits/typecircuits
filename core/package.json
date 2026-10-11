@@ -1,0 +1,23 @@
+{
+    "name": "core",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc && node build.mjs"
+    },
+    "devDependencies": {
+        "esbuild": "^0.28.2"
+    },
+    "dependencies": {
+        "@tree-sitter-grammars/tree-sitter-kotlin": "^1.1.0",
+        "async-mutex": "^0.5.0",
+        "tree-sitter-c-sharp": "^0.23.5",
+        "tree-sitter-java": "^0.23.5",
+        "tree-sitter-javascript": "^0.23.1",
+        "tree-sitter-python": "^0.25.0",
+        "web-tree-sitter": "^0.26.13"
+    }
+}

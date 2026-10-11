@@ -20,4 +20,4 @@
 $ npm run dev
 ```
 
-Examples are located in `src/examples.yml`.
+Examples are located in `app/src/examples.yml`.

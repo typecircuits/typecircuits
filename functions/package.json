@@ -1,0 +1,18 @@
+{
+    "name": "functions",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "build": "node build.mjs"
+    },
+    "devDependencies": {
+        "@chialab/esbuild-plugin-meta-url": "^0.19.2",
+        "@netlify/functions": "^6.0.2",
+        "esbuild": "^0.28.2"
+    },
+    "dependencies": {
+        "core": "file:../core",
+        "zod": "^4.6.6"
+    }
+}
