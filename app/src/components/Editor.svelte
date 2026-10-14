@@ -163,9 +163,20 @@
         })();
     });
 
+    let currentGroups = $state(context.compileResult?.groups);
+
+    $effect(() => {
+        context.code;
+        currentGroups = undefined;
+    });
+
+    $effect(() => {
+        currentGroups = context.compileResult?.groups;
+    });
+
     $effect(() => {
         const groups = Object.fromEntries(
-            context.compileResult?.groups.map((group, index) => [
+            currentGroups?.map((group, index) => [
                 index.toString(),
                 {
                     // Use `nodes` instead of `displayNodes` to show even replaced nodes
@@ -197,7 +208,7 @@
 
 {#if hoverState != null}
     {@const { element, groupId } = hoverState}
-    {@const types = context.compileResult?.groups[parseFloat(groupId)].types}
+    {@const types = currentGroups?.[parseFloat(groupId)].types}
 
     {#if types != null}
         <Tooltip reference={element} delay={500}>
@@ -260,7 +271,7 @@
         }
 
         & .group[data-group-highlighted] {
-            outline: calc(var(--group-size) / 4) solid
+            outline: calc(var(--group-size) / 2.25) solid
                 color-mix(in srgb, var(--color-blue-500) 80%, transparent);
             background-color: color-mix(in srgb, var(--color-blue-500) 15%, transparent);
         }
