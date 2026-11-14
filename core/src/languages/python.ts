@@ -344,18 +344,20 @@ export const pythonLanguage: Language<Parser> = {
 
                 switch (operator) {
                     case "+": {
-                        compiler.solver.unifyAt(node, [left, right]);
                         compiler.solver.overloadAt(node, [
                             [
                                 [left, new IntType()],
+                                [right, new IntType()],
                                 [node, new IntType()],
                             ],
                             [
                                 [left, new FloatType()],
+                                [right, new FloatType()],
                                 [node, new FloatType()],
                             ],
                             [
                                 [left, new StrType()],
+                                [right, new StrType()],
                                 [node, new StrType()],
                             ],
                         ]);
@@ -366,14 +368,15 @@ export const pythonLanguage: Language<Parser> = {
                     case "*":
                     case "%":
                     case "**": {
-                        compiler.solver.unifyAt(node, [left, right]);
                         compiler.solver.overloadAt(node, [
                             [
                                 [left, new IntType()],
+                                [right, new IntType()],
                                 [node, new IntType()],
                             ],
                             [
                                 [left, new FloatType()],
+                                [right, new FloatType()],
                                 [node, new FloatType()],
                             ],
                         ]);
@@ -381,14 +384,15 @@ export const pythonLanguage: Language<Parser> = {
                         break;
                     }
                     case "/": {
-                        compiler.solver.unifyAt(node, [left, right]);
                         compiler.solver.overloadAt(node, [
                             [
                                 [left, new IntType()],
+                                [right, new IntType()],
                                 [node, new FloatType()],
                             ],
                             [
                                 [left, new FloatType()],
+                                [right, new FloatType()],
                                 [node, new FloatType()],
                             ],
                         ]);
@@ -396,14 +400,15 @@ export const pythonLanguage: Language<Parser> = {
                         break;
                     }
                     case "//": {
-                        compiler.solver.unifyAt(node, [left, right]);
                         compiler.solver.overloadAt(node, [
                             [
                                 [left, new IntType()],
+                                [right, new IntType()],
                                 [node, new IntType()],
                             ],
                             [
                                 [left, new FloatType()],
+                                [right, new FloatType()],
                                 [node, new IntType()],
                             ],
                         ]);

@@ -250,14 +250,15 @@ export const javascriptLanguage: Language<Parser> = {
 
                 switch (operator) {
                     case "+": {
-                        compiler.solver.unifyAt(node, [left, right]);
                         compiler.solver.overloadAt(node, [
                             [
                                 [left, new NumberType()],
+                                [right, new NumberType()],
                                 [node, new NumberType()],
                             ],
                             [
                                 [left, new StringType()],
+                                [right, new StringType()],
                                 [node, new StringType()],
                             ],
                         ]);
@@ -269,10 +270,10 @@ export const javascriptLanguage: Language<Parser> = {
                     case "/":
                     case "%":
                     case "**": {
-                        compiler.solver.unifyAt(node, [left, right]);
                         compiler.solver.overloadAt(node, [
                             [
                                 [left, new NumberType()],
+                                [right, new NumberType()],
                                 [node, new NumberType()],
                             ],
                         ]);

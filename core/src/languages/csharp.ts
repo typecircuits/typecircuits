@@ -270,18 +270,20 @@ export const csharpLanguage: Language<Parser> = {
 
                 switch (operator) {
                     case "+": {
-                        compiler.solver.unifyAt(node, [left, right]);
                         compiler.solver.overloadAt(node, [
                             [
                                 [left, new IntType()],
+                                [right, new IntType()],
                                 [node, new IntType()],
                             ],
                             [
                                 [left, new DoubleType()],
+                                [right, new DoubleType()],
                                 [node, new DoubleType()],
                             ],
                             [
                                 [left, new StringType()],
+                                [right, new StringType()],
                                 [node, new StringType()],
                             ],
                         ]);
@@ -293,14 +295,15 @@ export const csharpLanguage: Language<Parser> = {
                     case "/":
                     case "%":
                     case "**": {
-                        compiler.solver.unifyAt(node, [left, right]);
                         compiler.solver.overloadAt(node, [
                             [
                                 [left, new IntType()],
+                                [right, new IntType()],
                                 [node, new IntType()],
                             ],
                             [
                                 [left, new DoubleType()],
+                                [right, new DoubleType()],
                                 [node, new DoubleType()],
                             ],
                         ]);

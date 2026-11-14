@@ -581,17 +581,17 @@ export const kotlinLanguage: Language<Parser> = {
                         compiler.solver.overloadAt(node, [
                             [
                                 [left, new IntType()],
-                                [left, right],
+                                [right, new IntType()],
                                 [node, new IntType()],
                             ],
                             [
                                 [left, new DoubleType()],
-                                [left, right],
+                                [right, new DoubleType()],
                                 [node, new DoubleType()],
                             ],
                             [
                                 [left, new StringType()],
-                                [left, right],
+                                [right, new StringType()],
                                 [node, new StringType()],
                             ],
                             [
@@ -607,14 +607,15 @@ export const kotlinLanguage: Language<Parser> = {
                     case "/":
                     case "%":
                     case "**": {
-                        compiler.solver.unifyAt(node, [left, right]);
                         compiler.solver.overloadAt(node, [
                             [
                                 [left, new IntType()],
+                                [right, new IntType()],
                                 [node, new IntType()],
                             ],
                             [
                                 [left, new DoubleType()],
+                                [right, new DoubleType()],
                                 [node, new DoubleType()],
                             ],
                         ]);
