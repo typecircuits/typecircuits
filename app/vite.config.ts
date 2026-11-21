@@ -22,7 +22,7 @@ export default defineConfig(({ mode, command }) => {
                 viteStaticCopy({
                     targets: [
                         {
-                            src: path.resolve(__dirname, "../core/dist/*.wasm"),
+                            src: path.resolve(__dirname, "../core/dist/*.{wasm,bin}"),
                             dest: "assets",
                             rename: { stripBase: 2 },
                         },

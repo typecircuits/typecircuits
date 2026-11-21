@@ -5,6 +5,7 @@ import { pythonLanguage } from "./python";
 import { javaLanguage } from "./java";
 import { csharpLanguage } from "./csharp";
 import { kotlinLanguage } from "./kotlin";
+import { wippleLanguage } from "./wipple";
 
 export interface Language<T> {
     name: string;
@@ -19,9 +20,8 @@ export const allLanguages = [
     javaLanguage,
     csharpLanguage,
     kotlinLanguage,
+    wippleLanguage,
 ];
-
-export { embeddedLanguage } from "./embedded";
 
 export const getLanguage = (name: string): Language<any> | undefined =>
     allLanguages.find((language) => language.name.toLowerCase() === name.toLowerCase());

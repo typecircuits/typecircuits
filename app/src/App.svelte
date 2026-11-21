@@ -105,26 +105,6 @@
         }
     });
 
-    $effect(() => {
-        if (!context.embed) return;
-
-        let setShow = false;
-        window.addEventListener("message", (event) => {
-            if (typeof event.data === "object" && "embed" in event.data) {
-                context.language = core.embeddedLanguage;
-                context.visualizer = "Circuit";
-                context.code = JSON.stringify(event.data.embed);
-
-                if (!setShow) {
-                    Object.assign(context.show, event.data.show);
-                    setShow = true;
-                }
-            }
-        });
-
-        window.parent.postMessage("requestEmbed", "*");
-    });
-
     const Visualizer = $derived(
         context.visualizer ? allVisualizers[context.visualizer] : undefined,
     );

@@ -7,6 +7,9 @@ await esbuild.build({
     bundle: true,
     sourcemap: true,
     format: "esm",
-    loader: { ".wasm": "file" },
+    loader: {
+        ".wasm": "file",
+        ".bin": "file",
+    },
     external: ["@codemirror/*"],
 });

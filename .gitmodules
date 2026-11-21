@@ -1,0 +1,3 @@
+[submodule "vendor/wipple"]
+	path = vendor/wipple
+	url = https://github.com/wipplelang/wipple.git
