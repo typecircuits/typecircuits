@@ -7,7 +7,7 @@
     ],
     "scripts": {
         "build": "./build.sh",
-        "dev": "./setup.sh && (cd app && npm run dev)",
+        "dev": "(cd core && npm run build) && (cd app && npm run dev)",
         "serve": "netlify dev --filter app --offline",
         "format": "prettier --write ."
     },

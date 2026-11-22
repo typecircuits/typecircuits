@@ -10,4 +10,3 @@ fi
 mkdir -p vendor
 curl -fsSL https://www.wipple.org/playground/assets/foundation.bin > vendor/wipple-foundation.bin
 (cd vendor/wipple/compiler/api && npm run build)
-(cd core && npm run build)

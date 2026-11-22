@@ -28,9 +28,9 @@ const loadWipple = () =>
 
 export const wippleLanguage: Language<wipple.Graph> = {
     name: "Wipple",
+    editorExtensions: async () => [await highlightExtension()],
     parse: async (code) => {
         await loadWipple();
-        console.log("loaded");
 
         const file = new wipple.File("input", code);
         const compileResult = wipple.compile([file], "foundation", true);
@@ -112,4 +112,68 @@ export const wippleLanguage: Language<wipple.Graph> = {
             graph.free();
         }
     },
+};
+
+const highlightExtension = async () => {
+    const { default: tokens, tokensRegex } = await import(
+        // @ts-ignore
+        "../../../vendor/wipple/playground/src/tokens"
+    );
+
+    const { Decoration, EditorView, MatchDecorator, ViewPlugin } = await import("@codemirror/view");
+    const { highlightingFor } = await import("@codemirror/language");
+    const { tags } = await import("@lezer/highlight");
+
+    const tagNames = {
+        comment: tags.comment,
+        string: tags.string,
+        number: tags.number,
+        operator: tags.operator,
+        keyword: tags.keyword,
+        type: tags.typeName,
+    };
+
+    const decorator = new MatchDecorator({
+        regexp: tokensRegex,
+        decorate: (add, from, to, match, view) => {
+            const [token] =
+                (match.groups &&
+                    Object.entries(match.groups).find(([_, value]) => value !== undefined)) ??
+                [];
+
+            if (token != null) {
+                const { highlight } = tokens[token];
+
+                const className =
+                    highlight != null && highlight in tagNames
+                        ? highlightingFor(view.state, [(tagNames as any)[highlight]])
+                        : undefined;
+
+                if (className != null) {
+                    add(from, to, Decoration.mark({ class: className }));
+                }
+            }
+        },
+    });
+
+    return ViewPlugin.fromClass(
+        class {
+            public decorations: import("@codemirror/view").DecorationSet;
+
+            constructor(view: import("@codemirror/view").EditorView) {
+                this.decorations = decorator.createDeco(view);
+            }
+
+            update(update: import("@codemirror/view").ViewUpdate) {
+                this.decorations = decorator.updateDeco(update, this.decorations);
+            }
+        },
+        {
+            decorations: (instance) => instance.decorations,
+            provide: (plugin) =>
+                EditorView.atomicRanges.of(
+                    (view) => view.plugin(plugin)?.decorations ?? Decoration.none,
+                ),
+        },
+    );
 };
